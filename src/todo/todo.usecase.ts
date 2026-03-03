@@ -3,8 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TodoRepository } from '../repository/todo.repository';
 import { TodoModel } from './todo.model';
 import { TodoValidator } from './todo.validator';
-import { CreateTodoDto } from './dto/create-todo.dto';
-import { UpdateTodoDto } from './dto/update-todo.dto';
+import { CreateTodoInput, UpdateTodoInput } from './schema';
 
 @Injectable()
 export class TodoUsecase {
@@ -22,19 +21,19 @@ export class TodoUsecase {
     return this.validator.ensureExists(await this.repository.findById(id), id);
   }
 
-  async create(dto: CreateTodoDto): Promise<TodoModel> {
+  async create(input: CreateTodoInput): Promise<TodoModel> {
     return this.prisma.$transaction((tx) => {
-      return this.repository.create({ title: dto.title }, tx);
+      return this.repository.create({ title: input.title }, tx);
     });
   }
 
-  async update(id: number, dto: UpdateTodoDto): Promise<TodoModel> {
+  async update(id: number, input: UpdateTodoInput): Promise<TodoModel> {
     const todo = this.validator.ensureExists(
       await this.repository.findById(id),
       id,
     );
 
-    const updated = todo.withUpdate(dto.title, dto.completed);
+    const updated = todo.withUpdate(input.title, input.completed);
 
     return this.prisma.$transaction((tx) => {
       return this.repository.update(id, updated, tx);

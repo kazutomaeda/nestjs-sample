@@ -1,14 +1,12 @@
-import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateTodoDto {
-  /** TODOのタイトル */
-  @IsOptional()
-  @IsString({ message: 'タイトルは文字列で入力してください' })
-  @IsNotEmpty({ message: 'タイトルは必須です' })
+  @ApiPropertyOptional({
+    description: 'TODOのタイトル',
+    example: '買い物に行く',
+  })
   title?: string;
 
-  /** 完了フラグ */
-  @IsOptional()
-  @IsBoolean({ message: '完了フラグは真偽値で入力してください' })
+  @ApiPropertyOptional({ description: '完了フラグ', example: true })
   completed?: boolean;
 }

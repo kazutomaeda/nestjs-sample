@@ -7,13 +7,19 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  UsePipes,
 } from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TodoUsecase } from './todo.usecase';
 import { TodoModel } from './todo.model';
-import { CreateTodoDto } from './dto/create-todo.dto';
-import { UpdateTodoDto } from './dto/update-todo.dto';
 import { TodoResponseDto } from './dto/todo-response.dto';
+import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
+import {
+  createTodoSchema,
+  CreateTodoInput,
+  updateTodoSchema,
+  UpdateTodoInput,
+} from './schema';
 
 @Controller('todos')
 @ApiTags('todos')
@@ -52,7 +58,8 @@ export class TodoController {
     type: TodoResponseDto,
   })
   @ApiResponse({ status: 400, description: 'バリデーションエラー' })
-  async create(@Body() dto: CreateTodoDto): Promise<TodoResponseDto> {
+  @UsePipes(new ZodValidationPipe(createTodoSchema))
+  async create(@Body() dto: CreateTodoInput): Promise<TodoResponseDto> {
     const todo = await this.todoUsecase.create(dto);
     return this.toResponse(todo);
   }
@@ -66,7 +73,7 @@ export class TodoController {
   @ApiResponse({ status: 404, description: 'TODOが見つからない' })
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateTodoDto,
+    @Body(new ZodValidationPipe(updateTodoSchema)) dto: UpdateTodoInput,
   ): Promise<TodoResponseDto> {
     const todo = await this.todoUsecase.update(id, dto);
     return this.toResponse(todo);

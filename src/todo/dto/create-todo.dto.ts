@@ -1,8 +1,6 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateTodoDto {
-  /** TODOのタイトル */
-  @IsString({ message: 'タイトルは文字列で入力してください' })
-  @IsNotEmpty({ message: 'タイトルは必須です' })
+  @ApiProperty({ description: 'TODOのタイトル', example: '買い物に行く' })
   title: string;
 }
