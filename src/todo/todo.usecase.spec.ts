@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../prisma/prisma.service';
-import { TodoRepository } from '../repository/todo.repository';
+import { TodoRepository } from './todo.repository';
 import { TodoModel } from './todo.model';
 import { TodoUsecase } from './todo.usecase';
 import { TodoValidator } from './todo.validator';

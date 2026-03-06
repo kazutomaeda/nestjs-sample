@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { validate } from './config/env.validation';
 import { PrismaModule } from './prisma/prisma.module';
-import { RepositoryModule } from './repository/repository.module';
 import { TodoModule } from './todo/todo.module';
 
 @Module({
@@ -12,7 +11,6 @@ import { TodoModule } from './todo/todo.module';
       validate,
     }),
     PrismaModule,
-    RepositoryModule,
     TodoModule,
   ],
 })

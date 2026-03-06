@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { TodoRepository } from '../repository/todo.repository';
+import { TodoRepository } from './todo.repository';
 import { TodoModel } from './todo.model';
 import { TodoValidator } from './todo.validator';
 import { CreateTodoInput, UpdateTodoInput } from './schema';
