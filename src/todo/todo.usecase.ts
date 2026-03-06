@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { TransactionService } from '../prisma/transaction.service';
 import { TodoRepository } from './todo.repository';
 import { TodoModel } from './todo.model';
 import { TodoValidator } from './todo.validator';
@@ -8,7 +8,7 @@ import { CreateTodoInput, UpdateTodoInput } from './schema';
 @Injectable()
 export class TodoUsecase {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly transaction: TransactionService,
     private readonly repository: TodoRepository,
     private readonly validator: TodoValidator,
   ) {}
@@ -22,7 +22,7 @@ export class TodoUsecase {
   }
 
   async create(input: CreateTodoInput): Promise<TodoModel> {
-    return this.prisma.$transaction((tx) => {
+    return this.transaction.run((tx) => {
       return this.repository.create({ title: input.title }, tx);
     });
   }
@@ -35,14 +35,14 @@ export class TodoUsecase {
 
     const updated = todo.withUpdate(input.title, input.completed);
 
-    return this.prisma.$transaction((tx) => {
+    return this.transaction.run((tx) => {
       return this.repository.update(id, updated, tx);
     });
   }
 
   async remove(id: number): Promise<TodoModel> {
     this.validator.ensureExists(await this.repository.findById(id), id);
-    return this.prisma.$transaction((tx) => {
+    return this.transaction.run((tx) => {
       return this.repository.delete(id, tx);
     });
   }

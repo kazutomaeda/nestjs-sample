@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { PrismaService } from '../prisma/prisma.service';
+import { TransactionService } from '../prisma/transaction.service';
 import { TodoRepository } from './todo.repository';
 import { TodoModel } from './todo.model';
 import { TodoUsecase } from './todo.usecase';
@@ -24,8 +24,8 @@ const mockTodoRepository: Pick<
   delete: jest.fn(),
 };
 
-const mockPrismaService = {
-  $transaction: jest.fn((fn: (tx: unknown) => unknown) => fn({})),
+const mockTransactionService: Pick<TransactionService, 'run'> = {
+  run: jest.fn(<T>(fn: (tx: unknown) => Promise<T>) => fn({} as never)),
 };
 
 describe('TodoUsecase', () => {
@@ -37,7 +37,7 @@ describe('TodoUsecase', () => {
         TodoUsecase,
         TodoValidator,
         { provide: TodoRepository, useValue: mockTodoRepository },
-        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: TransactionService, useValue: mockTransactionService },
       ],
     }).compile();
 
@@ -46,8 +46,8 @@ describe('TodoUsecase', () => {
 
   afterEach(() => {
     jest.resetAllMocks();
-    mockPrismaService.$transaction.mockImplementation(
-      (fn: (tx: unknown) => unknown) => fn({}),
+    (mockTransactionService.run as jest.Mock).mockImplementation(
+      <T>(fn: (tx: unknown) => Promise<T>) => fn({} as never),
     );
   });
 
@@ -86,7 +86,7 @@ describe('TodoUsecase', () => {
       const result = await usecase.create({ title: 'テストTODO' });
 
       expect(result).toEqual(mockTodo);
-      expect(mockPrismaService.$transaction).toHaveBeenCalled();
+      expect(mockTransactionService.run).toHaveBeenCalled();
       expect(mockTodoRepository.create).toHaveBeenCalledWith(
         { title: 'テストTODO' },
         expect.anything(),
@@ -110,7 +110,7 @@ describe('TodoUsecase', () => {
 
       expect(result).toEqual(updatedTodo);
       expect(mockTodoRepository.findById).toHaveBeenCalledWith(1);
-      expect(mockPrismaService.$transaction).toHaveBeenCalled();
+      expect(mockTransactionService.run).toHaveBeenCalled();
       expect(mockTodoRepository.update).toHaveBeenCalledWith(
         1,
         expect.any(TodoModel),
@@ -128,7 +128,7 @@ describe('TodoUsecase', () => {
 
       expect(result).toEqual(mockTodo);
       expect(mockTodoRepository.findById).toHaveBeenCalledWith(1);
-      expect(mockPrismaService.$transaction).toHaveBeenCalled();
+      expect(mockTransactionService.run).toHaveBeenCalled();
       expect(mockTodoRepository.delete).toHaveBeenCalledWith(
         1,
         expect.anything(),
