@@ -1,3 +1,5 @@
+import { TagResponseDto } from '../../tag/dto/tag-response.dto';
+
 export class TodoResponseDto {
   /** TODO ID */
   id: number;
@@ -13,4 +15,7 @@ export class TodoResponseDto {
 
   /** 更新日時 */
   updatedAt: Date;
+
+  /** タグ一覧 */
+  tags: TagResponseDto[];
 }

@@ -11,6 +11,18 @@ describe('createTodoSchema', () => {
       }
     });
 
+    it('タグ付きで有効', () => {
+      const input = { title: 'タスク1', tags: ['重要', '買い物'] };
+      const result = createTodoSchema.safeParse(input);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toEqual({
+          title: 'タスク1',
+          tags: ['重要', '買い物'],
+        });
+      }
+    });
+
     it('余分なフィールドは除去される', () => {
       const input = { title: 'タスク1', extra: 'field' };
       const result = createTodoSchema.safeParse(input);
@@ -39,6 +51,18 @@ describe('createTodoSchema', () => {
 
     it('タイトルが文字列でない場合はエラー', () => {
       const input = { title: 123 };
+      const result = createTodoSchema.safeParse(input);
+      expect(result.success).toBe(false);
+    });
+
+    it('タグに空文字が含まれる場合はエラー', () => {
+      const input = { title: 'タスク1', tags: [''] };
+      const result = createTodoSchema.safeParse(input);
+      expect(result.success).toBe(false);
+    });
+
+    it('タグが文字列配列でない場合はエラー', () => {
+      const input = { title: 'タスク1', tags: [123] };
       const result = createTodoSchema.safeParse(input);
       expect(result.success).toBe(false);
     });

@@ -20,6 +20,12 @@ describe('updateTodoSchema', () => {
       expect(result.success).toBe(true);
     });
 
+    it('タグ付きで有効', () => {
+      const input = { tags: ['重要', '買い物'] };
+      const result = updateTodoSchema.safeParse(input);
+      expect(result.success).toBe(true);
+    });
+
     it('空オブジェクトで有効（部分更新なので）', () => {
       const input = {};
       const result = updateTodoSchema.safeParse(input);
@@ -45,6 +51,18 @@ describe('updateTodoSchema', () => {
 
     it('タイトルが文字列でない場合はエラー', () => {
       const input = { title: 123 };
+      const result = updateTodoSchema.safeParse(input);
+      expect(result.success).toBe(false);
+    });
+
+    it('タグに空文字が含まれる場合はエラー', () => {
+      const input = { tags: [''] };
+      const result = updateTodoSchema.safeParse(input);
+      expect(result.success).toBe(false);
+    });
+
+    it('タグが文字列配列でない場合はエラー', () => {
+      const input = { tags: [123] };
       const result = updateTodoSchema.safeParse(input);
       expect(result.success).toBe(false);
     });

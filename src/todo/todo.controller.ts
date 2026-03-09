@@ -100,6 +100,12 @@ export class TodoController {
       completed: model.completed,
       createdAt: model.createdAt,
       updatedAt: model.updatedAt,
+      tags: (model.tags ?? []).map((tag) => ({
+        id: tag.id,
+        name: tag.name,
+        createdAt: tag.createdAt,
+        updatedAt: tag.updatedAt,
+      })),
     };
   }
 }

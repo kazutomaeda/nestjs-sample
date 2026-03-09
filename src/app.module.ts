@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { validate } from './config/env.validation';
 import { PrismaModule } from './prisma/prisma.module';
+import { TagModule } from './tag/tag.module';
 import { TodoModule } from './todo/todo.module';
 
 @Module({
@@ -11,6 +12,7 @@ import { TodoModule } from './todo/todo.module';
       validate,
     }),
     PrismaModule,
+    TagModule,
     TodoModule,
   ],
 })

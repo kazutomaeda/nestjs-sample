@@ -1,8 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TransactionClient } from '../prisma/prisma.types';
+import { TagModel } from '../tag/tag.model';
 import { TodoModel } from './todo.model';
-import { Todo } from './todo.entity';
+import { Todo, TodoTag } from './todo.entity';
+
+const includeTagsOption = {
+  todoTags: { include: { tag: true } },
+};
+
+type TodoWithTodoTags = Todo & {
+  todoTags: (TodoTag & {
+    tag: { id: number; name: string; createdAt: Date; updatedAt: Date };
+  })[];
+};
 
 @Injectable()
 export class TodoRepository {
@@ -11,52 +22,88 @@ export class TodoRepository {
   async findAll(): Promise<TodoModel[]> {
     const entities = await this.prisma.todo.findMany({
       orderBy: { createdAt: 'desc' },
+      include: includeTagsOption,
     });
-    return entities.map((entity) => this.toModel(entity));
+    return entities.map((entity) => this.toModel(entity as TodoWithTodoTags));
   }
 
   async findById(id: number): Promise<TodoModel | null> {
-    const entity = await this.prisma.todo.findUnique({ where: { id } });
-    return entity ? this.toModel(entity) : null;
+    const entity = await this.prisma.todo.findUnique({
+      where: { id },
+      include: includeTagsOption,
+    });
+    return entity ? this.toModel(entity as TodoWithTodoTags) : null;
   }
 
   async create(
-    params: Pick<TodoModel, 'title'>,
+    params: { title: string; tagIds?: number[] },
     tx: TransactionClient,
   ): Promise<TodoModel> {
     const entity = await tx.todo.create({
-      data: { title: params.title },
+      data: {
+        title: params.title,
+        ...(params.tagIds && {
+          todoTags: {
+            create: params.tagIds.map((tagId) => ({ tagId })),
+          },
+        }),
+      },
+      include: includeTagsOption,
     });
-    return this.toModel(entity);
+    return this.toModel(entity as TodoWithTodoTags);
   }
 
   async update(
     id: number,
     model: TodoModel,
+    tagIds: number[] | undefined,
     tx: TransactionClient,
   ): Promise<TodoModel> {
+    if (tagIds !== undefined) {
+      await tx.todoTag.deleteMany({ where: { todoId: id } });
+    }
+
     const entity = await tx.todo.update({
       where: { id },
       data: {
         title: model.title,
         completed: model.completed,
+        ...(tagIds !== undefined && {
+          todoTags: {
+            create: tagIds.map((tagId) => ({ tagId })),
+          },
+        }),
       },
+      include: includeTagsOption,
     });
-    return this.toModel(entity);
+    return this.toModel(entity as TodoWithTodoTags);
   }
 
   async delete(id: number, tx: TransactionClient): Promise<TodoModel> {
-    const entity = await tx.todo.delete({ where: { id } });
-    return this.toModel(entity);
+    await tx.todoTag.deleteMany({ where: { todoId: id } });
+    const entity = await tx.todo.delete({
+      where: { id },
+      include: includeTagsOption,
+    });
+    return this.toModel(entity as TodoWithTodoTags);
   }
 
-  private toModel(entity: Todo): TodoModel {
+  private toModel(entity: TodoWithTodoTags): TodoModel {
     return new TodoModel({
       id: entity.id,
       title: entity.title,
       completed: entity.completed,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
+      tags: entity.todoTags.map(
+        (tt) =>
+          new TagModel({
+            id: tt.tag.id,
+            name: tt.tag.name,
+            createdAt: tt.tag.createdAt,
+            updatedAt: tt.tag.updatedAt,
+          }),
+      ),
     });
   }
 }

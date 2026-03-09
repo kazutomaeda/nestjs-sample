@@ -1,5 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { TransactionService } from '../prisma/transaction.service';
+import { TagResolveService } from '../tag/external/tag-resolve.service';
 import { TodoRepository } from './todo.repository';
 import { TodoModel } from './todo.model';
 import { TodoUsecase } from './todo.usecase';
@@ -11,6 +12,7 @@ const mockTodo = new TodoModel({
   completed: false,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
+  tags: [],
 });
 
 const mockTodoRepository: Pick<
@@ -22,6 +24,10 @@ const mockTodoRepository: Pick<
   create: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
+};
+
+const mockTagResolveService: Pick<TagResolveService, 'resolveTagIds'> = {
+  resolveTagIds: jest.fn(),
 };
 
 const mockTransactionService: Pick<TransactionService, 'run'> = {
@@ -37,6 +43,7 @@ describe('TodoUsecase', () => {
         TodoUsecase,
         TodoValidator,
         { provide: TodoRepository, useValue: mockTodoRepository },
+        { provide: TagResolveService, useValue: mockTagResolveService },
         { provide: TransactionService, useValue: mockTransactionService },
       ],
     }).compile();
@@ -88,7 +95,28 @@ describe('TodoUsecase', () => {
       expect(result).toEqual(mockTodo);
       expect(mockTransactionService.run).toHaveBeenCalled();
       expect(mockTodoRepository.create).toHaveBeenCalledWith(
-        { title: 'テストTODO' },
+        { title: 'テストTODO', tagIds: undefined },
+        expect.anything(),
+      );
+    });
+
+    it('タグ名を指定した場合、タグを解決してTODOを作成する', async () => {
+      (mockTagResolveService.resolveTagIds as jest.Mock).mockResolvedValue([
+        1, 2,
+      ]);
+      (mockTodoRepository.create as jest.Mock).mockResolvedValue(mockTodo);
+
+      await usecase.create({
+        title: 'テストTODO',
+        tags: ['既存タグ', '新規タグ'],
+      });
+
+      expect(mockTagResolveService.resolveTagIds).toHaveBeenCalledWith(
+        ['既存タグ', '新規タグ'],
+        expect.anything(),
+      );
+      expect(mockTodoRepository.create).toHaveBeenCalledWith(
+        { title: 'テストTODO', tagIds: [1, 2] },
         expect.anything(),
       );
     });
@@ -102,6 +130,7 @@ describe('TodoUsecase', () => {
         completed: true,
         createdAt: new Date('2024-01-01'),
         updatedAt: new Date('2024-01-01'),
+        tags: [],
       });
       (mockTodoRepository.findById as jest.Mock).mockResolvedValue(mockTodo);
       (mockTodoRepository.update as jest.Mock).mockResolvedValue(updatedTodo);
@@ -114,6 +143,26 @@ describe('TodoUsecase', () => {
       expect(mockTodoRepository.update).toHaveBeenCalledWith(
         1,
         expect.any(TodoModel),
+        undefined,
+        expect.anything(),
+      );
+    });
+
+    it('タグ名を指定した場合、タグを解決してTODOを更新する', async () => {
+      (mockTodoRepository.findById as jest.Mock).mockResolvedValue(mockTodo);
+      (mockTodoRepository.update as jest.Mock).mockResolvedValue(mockTodo);
+      (mockTagResolveService.resolveTagIds as jest.Mock).mockResolvedValue([1]);
+
+      await usecase.update(1, { tags: ['既存タグ'] });
+
+      expect(mockTagResolveService.resolveTagIds).toHaveBeenCalledWith(
+        ['既存タグ'],
+        expect.anything(),
+      );
+      expect(mockTodoRepository.update).toHaveBeenCalledWith(
+        1,
+        expect.any(TodoModel),
+        [1],
         expect.anything(),
       );
     });

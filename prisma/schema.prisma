@@ -8,11 +8,32 @@ datasource db {
 }
 
 model Todo {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   title     String
-  completed Boolean  @default(false)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  completed Boolean   @default(false)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  todoTags  TodoTag[]
 
   @@map("Todos")
+}
+
+model Tag {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  todoTags  TodoTag[]
+
+  @@map("Tags")
+}
+
+model TodoTag {
+  todoId Int  @map("todo_id")
+  tagId  Int  @map("tag_id")
+  todo   Todo @relation(fields: [todoId], references: [id])
+  tag    Tag  @relation(fields: [tagId], references: [id])
+
+  @@id([todoId, tagId])
+  @@map("TodoTags")
 }

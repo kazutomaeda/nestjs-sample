@@ -9,4 +9,11 @@ export class UpdateTodoDto {
 
   @ApiPropertyOptional({ description: '完了フラグ', example: true })
   completed?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'タグ名の配列',
+    example: ['重要', '買い物'],
+    type: [String],
+  })
+  tags?: string[];
 }
