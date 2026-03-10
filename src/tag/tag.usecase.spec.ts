@@ -6,8 +6,11 @@ import { TagModel } from './tag.model';
 import { TagUsecase } from './tag.usecase';
 import { TagValidator } from './tag.validator';
 
+const mockAbility = {} as any;
+
 const mockTag = new TagModel({
   id: 1,
+  tenantId: 1,
   name: '重要',
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
@@ -56,7 +59,7 @@ describe('TagUsecase', () => {
     it('タグ一覧を返す', async () => {
       (mockTagRepository.findAll as jest.Mock).mockResolvedValue([mockTag]);
 
-      const result = await usecase.findAll();
+      const result = await usecase.findAll(mockAbility);
 
       expect(result).toEqual([mockTag]);
       expect(mockTagRepository.findAll).toHaveBeenCalled();
@@ -67,16 +70,16 @@ describe('TagUsecase', () => {
     it('指定IDのタグを返す', async () => {
       (mockTagRepository.findById as jest.Mock).mockResolvedValue(mockTag);
 
-      const result = await usecase.findOne(1);
+      const result = await usecase.findOne(1, mockAbility);
 
       expect(result).toEqual(mockTag);
-      expect(mockTagRepository.findById).toHaveBeenCalledWith(1);
+      expect(mockTagRepository.findById).toHaveBeenCalledWith(1, mockAbility);
     });
 
     it('存在しないIDの場合、NotFoundExceptionを投げる', async () => {
       (mockTagRepository.findById as jest.Mock).mockResolvedValue(null);
 
-      await expect(usecase.findOne(999)).rejects.toThrow();
+      await expect(usecase.findOne(999, mockAbility)).rejects.toThrow();
     });
   });
 
@@ -85,12 +88,13 @@ describe('TagUsecase', () => {
       (mockTagRepository.findByName as jest.Mock).mockResolvedValue(null);
       (mockTagRepository.create as jest.Mock).mockResolvedValue(mockTag);
 
-      const result = await usecase.create({ name: '重要' });
+      const result = await usecase.create({ name: '重要' }, 1);
 
       expect(result).toEqual(mockTag);
       expect(mockTransactionService.run).toHaveBeenCalled();
+      expect(mockTagRepository.findByName).toHaveBeenCalledWith('重要', 1);
       expect(mockTagRepository.create).toHaveBeenCalledWith(
-        { name: '重要' },
+        { name: '重要', tenantId: 1 },
         expect.anything(),
       );
     });
@@ -98,7 +102,7 @@ describe('TagUsecase', () => {
     it('同名タグが存在する場合、ConflictExceptionを投げる', async () => {
       (mockTagRepository.findByName as jest.Mock).mockResolvedValue(mockTag);
 
-      await expect(usecase.create({ name: '重要' })).rejects.toThrow(
+      await expect(usecase.create({ name: '重要' }, 1)).rejects.toThrow(
         ConflictException,
       );
     });
@@ -108,6 +112,7 @@ describe('TagUsecase', () => {
     it('存在確認後、トランザクション内でタグを更新して返す', async () => {
       const updatedTag = new TagModel({
         id: 1,
+        tenantId: 1,
         name: '緊急',
         createdAt: new Date('2024-01-01'),
         updatedAt: new Date('2024-01-01'),
@@ -116,10 +121,10 @@ describe('TagUsecase', () => {
       (mockTagRepository.findByName as jest.Mock).mockResolvedValue(null);
       (mockTagRepository.update as jest.Mock).mockResolvedValue(updatedTag);
 
-      const result = await usecase.update(1, { name: '緊急' });
+      const result = await usecase.update(1, { name: '緊急' }, 1, mockAbility);
 
       expect(result).toEqual(updatedTag);
-      expect(mockTagRepository.findById).toHaveBeenCalledWith(1);
+      expect(mockTagRepository.findById).toHaveBeenCalledWith(1, mockAbility);
       expect(mockTransactionService.run).toHaveBeenCalled();
       expect(mockTagRepository.update).toHaveBeenCalledWith(
         1,
@@ -133,13 +138,14 @@ describe('TagUsecase', () => {
       (mockTagRepository.findByName as jest.Mock).mockResolvedValue(
         new TagModel({
           id: 2,
+          tenantId: 1,
           name: '緊急',
           createdAt: new Date('2024-01-01'),
           updatedAt: new Date('2024-01-01'),
         }),
       );
 
-      await expect(usecase.update(1, { name: '緊急' })).rejects.toThrow(
+      await expect(usecase.update(1, { name: '緊急' }, 1, mockAbility)).rejects.toThrow(
         ConflictException,
       );
     });
@@ -150,10 +156,10 @@ describe('TagUsecase', () => {
       (mockTagRepository.findById as jest.Mock).mockResolvedValue(mockTag);
       (mockTagRepository.delete as jest.Mock).mockResolvedValue(mockTag);
 
-      const result = await usecase.remove(1);
+      const result = await usecase.remove(1, mockAbility);
 
       expect(result).toEqual(mockTag);
-      expect(mockTagRepository.findById).toHaveBeenCalledWith(1);
+      expect(mockTagRepository.findById).toHaveBeenCalledWith(1, mockAbility);
       expect(mockTransactionService.run).toHaveBeenCalled();
       expect(mockTagRepository.delete).toHaveBeenCalledWith(
         1,

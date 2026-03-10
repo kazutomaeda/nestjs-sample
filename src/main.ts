@@ -1,12 +1,22 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { ProblemDetailsFilter } from './common/filters/problem-details.filter';
+import { JwtAuthGuard } from './auth/external/jwt-auth.guard';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Cookie パーサー
+  app.use(cookieParser());
+
+  // グローバル認証ガード（@Public() で除外可能）
+  const reflector = app.get(Reflector);
+  const jwtAuthGuard = app.get(JwtAuthGuard);
+  app.useGlobalGuards(jwtAuthGuard);
 
   app.useGlobalPipes(
     new ValidationPipe({

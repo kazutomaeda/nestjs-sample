@@ -8,6 +8,7 @@ export class TodoTag {
 
 export class Todo {
   id: number;
+  tenantId: number;
   title: string;
   completed: boolean;
   createdAt: Date;

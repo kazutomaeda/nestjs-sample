@@ -2,6 +2,7 @@ import { TagModel } from '../tag/tag.model';
 
 export class TodoModel {
   readonly id: number;
+  readonly tenantId: number;
   readonly title: string;
   readonly completed: boolean;
   readonly createdAt: Date;
@@ -10,6 +11,7 @@ export class TodoModel {
 
   constructor(params: {
     id: number;
+    tenantId: number;
     title: string;
     completed: boolean;
     createdAt: Date;
@@ -17,6 +19,7 @@ export class TodoModel {
     tags?: TagModel[];
   }) {
     this.id = params.id;
+    this.tenantId = params.tenantId;
     this.title = params.title;
     this.completed = params.completed;
     this.createdAt = params.createdAt;
@@ -27,6 +30,7 @@ export class TodoModel {
   withUpdate(title?: string, completed?: boolean): TodoModel {
     return new TodoModel({
       id: this.id,
+      tenantId: this.tenantId,
       title: title ?? this.title,
       completed: completed ?? this.completed,
       createdAt: this.createdAt,

@@ -4,6 +4,7 @@ import { TodoValidator } from './todo.validator';
 
 const mockTodo = new TodoModel({
   id: 1,
+  tenantId: 1,
   title: 'テストTODO',
   completed: false,
   createdAt: new Date('2024-01-01'),

@@ -2,11 +2,13 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   ParseIntPipe,
   Patch,
   Post,
+  UseGuards,
   UsePipes,
 } from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -20,11 +22,20 @@ import {
   updateTodoSchema,
   UpdateTodoInput,
 } from './schema';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CheckPolicy } from '../auth/decorators/check-policy.decorator';
+import { PoliciesGuard } from '../auth/external/policies.guard';
+import { CaslAbilityFactory } from '../auth/external/casl-ability.factory';
+import { JwtPayload } from '../auth/types';
 
 @Controller('todos')
 @ApiTags('todos')
+@UseGuards(PoliciesGuard)
 export class TodoController {
-  constructor(private readonly todoUsecase: TodoUsecase) {}
+  constructor(
+    private readonly todoUsecase: TodoUsecase,
+    private readonly caslAbilityFactory: CaslAbilityFactory,
+  ) {}
 
   @Get()
   @ApiResponse({
@@ -32,8 +43,10 @@ export class TodoController {
     description: 'TODO一覧取得',
     type: [TodoResponseDto],
   })
-  async findAll(): Promise<TodoResponseDto[]> {
-    const todos = await this.todoUsecase.findAll();
+  @CheckPolicy((ability) => ability.can('read', 'Todo'))
+  async findAll(@CurrentUser() user: JwtPayload): Promise<TodoResponseDto[]> {
+    const ability = this.caslAbilityFactory.createForUser(user);
+    const todos = await this.todoUsecase.findAll(ability);
     return todos.map((todo) => this.toResponse(todo));
   }
 
@@ -44,10 +57,13 @@ export class TodoController {
     type: TodoResponseDto,
   })
   @ApiResponse({ status: 404, description: 'TODOが見つからない' })
+  @CheckPolicy((ability) => ability.can('read', 'Todo'))
   async findOne(
     @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtPayload,
   ): Promise<TodoResponseDto> {
-    const todo = await this.todoUsecase.findOne(id);
+    const ability = this.caslAbilityFactory.createForUser(user);
+    const todo = await this.todoUsecase.findOne(id, ability);
     return this.toResponse(todo);
   }
 
@@ -58,9 +74,17 @@ export class TodoController {
     type: TodoResponseDto,
   })
   @ApiResponse({ status: 400, description: 'バリデーションエラー' })
+  @CheckPolicy((ability) => ability.can('create', 'Todo'))
   @UsePipes(new ZodValidationPipe(createTodoSchema))
-  async create(@Body() dto: CreateTodoInput): Promise<TodoResponseDto> {
-    const todo = await this.todoUsecase.create(dto);
+  async create(
+    @Body() dto: CreateTodoInput,
+    @CurrentUser() user: JwtPayload,
+  ): Promise<TodoResponseDto> {
+    if (user.tenantId === null) {
+      throw new ForbiddenException('テナントに所属していません');
+    }
+    const ability = this.caslAbilityFactory.createForUser(user);
+    const todo = await this.todoUsecase.create(dto, user.tenantId, ability);
     return this.toResponse(todo);
   }
 
@@ -71,11 +95,17 @@ export class TodoController {
     type: TodoResponseDto,
   })
   @ApiResponse({ status: 404, description: 'TODOが見つからない' })
+  @CheckPolicy((ability) => ability.can('update', 'Todo'))
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(updateTodoSchema)) dto: UpdateTodoInput,
+    @CurrentUser() user: JwtPayload,
   ): Promise<TodoResponseDto> {
-    const todo = await this.todoUsecase.update(id, dto);
+    if (user.tenantId === null) {
+      throw new ForbiddenException('テナントに所属していません');
+    }
+    const ability = this.caslAbilityFactory.createForUser(user);
+    const todo = await this.todoUsecase.update(id, dto, user.tenantId, ability);
     return this.toResponse(todo);
   }
 
@@ -86,10 +116,13 @@ export class TodoController {
     type: TodoResponseDto,
   })
   @ApiResponse({ status: 404, description: 'TODOが見つからない' })
+  @CheckPolicy((ability) => ability.can('delete', 'Todo'))
   async remove(
     @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtPayload,
   ): Promise<TodoResponseDto> {
-    const todo = await this.todoUsecase.remove(id);
+    const ability = this.caslAbilityFactory.createForUser(user);
+    const todo = await this.todoUsecase.remove(id, ability);
     return this.toResponse(todo);
   }
 

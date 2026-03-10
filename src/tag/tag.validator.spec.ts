@@ -4,6 +4,7 @@ import { TagValidator } from './tag.validator';
 
 const mockTag = new TagModel({
   id: 1,
+  tenantId: 1,
   name: '重要',
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),

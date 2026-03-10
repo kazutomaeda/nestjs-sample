@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
+import { accessibleBy } from '@casl/prisma';
 import { PrismaService } from '../prisma/prisma.service';
 import { TransactionClient } from '../prisma/prisma.types';
 import { TagModel } from '../tag/tag.model';
 import { TodoModel } from './todo.model';
 import { Todo, TodoTag } from './todo.entity';
+import { AppAbility } from '../auth/external/casl-ability.factory';
 
 const includeTagsOption = {
   todoTags: { include: { tag: true } },
@@ -11,7 +13,7 @@ const includeTagsOption = {
 
 type TodoWithTodoTags = Todo & {
   todoTags: (TodoTag & {
-    tag: { id: number; name: string; createdAt: Date; updatedAt: Date };
+    tag: { id: number; tenantId: number; name: string; createdAt: Date; updatedAt: Date };
   })[];
 };
 
@@ -19,28 +21,33 @@ type TodoWithTodoTags = Todo & {
 export class TodoRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(): Promise<TodoModel[]> {
+  async findAll(ability: AppAbility): Promise<TodoModel[]> {
     const entities = await this.prisma.todo.findMany({
+      where: accessibleBy(ability).Todo,
       orderBy: { createdAt: 'desc' },
       include: includeTagsOption,
     });
     return entities.map((entity) => this.toModel(entity as TodoWithTodoTags));
   }
 
-  async findById(id: number): Promise<TodoModel | null> {
-    const entity = await this.prisma.todo.findUnique({
-      where: { id },
+  async findById(id: number, ability: AppAbility): Promise<TodoModel | null> {
+    const entity = await this.prisma.todo.findFirst({
+      where: {
+        id,
+        AND: [accessibleBy(ability).Todo],
+      },
       include: includeTagsOption,
     });
     return entity ? this.toModel(entity as TodoWithTodoTags) : null;
   }
 
   async create(
-    params: { title: string; tagIds?: number[] },
+    params: { tenantId: number; title: string; tagIds?: number[] },
     tx: TransactionClient,
   ): Promise<TodoModel> {
     const entity = await tx.todo.create({
       data: {
+        tenantId: params.tenantId,
         title: params.title,
         ...(params.tagIds && {
           todoTags: {
@@ -91,6 +98,7 @@ export class TodoRepository {
   private toModel(entity: TodoWithTodoTags): TodoModel {
     return new TodoModel({
       id: entity.id,
+      tenantId: entity.tenantId,
       title: entity.title,
       completed: entity.completed,
       createdAt: entity.createdAt,
@@ -99,6 +107,7 @@ export class TodoRepository {
         (tt) =>
           new TagModel({
             id: tt.tag.id,
+            tenantId: tt.tag.tenantId,
             name: tt.tag.name,
             createdAt: tt.tag.createdAt,
             updatedAt: tt.tag.updatedAt,

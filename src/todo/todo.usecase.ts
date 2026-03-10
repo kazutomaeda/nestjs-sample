@@ -5,6 +5,7 @@ import { TodoRepository } from './todo.repository';
 import { TodoModel } from './todo.model';
 import { TodoValidator } from './todo.validator';
 import { CreateTodoInput, UpdateTodoInput } from './schema';
+import { AppAbility } from '../auth/external/casl-ability.factory';
 
 @Injectable()
 export class TodoUsecase {
@@ -15,26 +16,38 @@ export class TodoUsecase {
     private readonly tagResolveService: TagResolveService,
   ) {}
 
-  async findAll(): Promise<TodoModel[]> {
-    return this.repository.findAll();
+  async findAll(ability: AppAbility): Promise<TodoModel[]> {
+    return this.repository.findAll(ability);
   }
 
-  async findOne(id: number): Promise<TodoModel> {
-    return this.validator.ensureExists(await this.repository.findById(id), id);
+  async findOne(id: number, ability: AppAbility): Promise<TodoModel> {
+    return this.validator.ensureExists(
+      await this.repository.findById(id, ability),
+      id,
+    );
   }
 
-  async create(input: CreateTodoInput): Promise<TodoModel> {
+  async create(
+    input: CreateTodoInput,
+    tenantId: number,
+    ability: AppAbility,
+  ): Promise<TodoModel> {
     return this.transaction.run(async (tx) => {
       const tagIds = input.tags
-        ? await this.tagResolveService.resolveTagIds(input.tags, tx)
+        ? await this.tagResolveService.resolveTagIds(input.tags, tenantId, tx)
         : undefined;
-      return this.repository.create({ title: input.title, tagIds }, tx);
+      return this.repository.create({ tenantId, title: input.title, tagIds }, tx);
     });
   }
 
-  async update(id: number, input: UpdateTodoInput): Promise<TodoModel> {
+  async update(
+    id: number,
+    input: UpdateTodoInput,
+    tenantId: number,
+    ability: AppAbility,
+  ): Promise<TodoModel> {
     const todo = this.validator.ensureExists(
-      await this.repository.findById(id),
+      await this.repository.findById(id, ability),
       id,
     );
 
@@ -42,14 +55,17 @@ export class TodoUsecase {
 
     return this.transaction.run(async (tx) => {
       const tagIds = input.tags
-        ? await this.tagResolveService.resolveTagIds(input.tags, tx)
+        ? await this.tagResolveService.resolveTagIds(input.tags, tenantId, tx)
         : undefined;
       return this.repository.update(id, updated, tagIds, tx);
     });
   }
 
-  async remove(id: number): Promise<TodoModel> {
-    this.validator.ensureExists(await this.repository.findById(id), id);
+  async remove(id: number, ability: AppAbility): Promise<TodoModel> {
+    this.validator.ensureExists(
+      await this.repository.findById(id, ability),
+      id,
+    );
     return this.transaction.run((tx) => {
       return this.repository.delete(id, tx);
     });
