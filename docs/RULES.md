@@ -27,8 +27,7 @@
 | 分類 | 型 | 関心事 |
 |------|-----|--------|
 | 内部 | Model | ビジネスロジックが扱うデータ |
-| 外部 | 入力 DTO | Swagger ドキュメント用の入力定義 |
-| 外部 | Zod スキーマ | バリデーション + 入力型の生成 |
+| 外部 | Zod スキーマ | バリデーション + 入力型の生成 + Swagger 入力定義 |
 | 外部 | Response DTO | 外部へ提供する形 |
 | DB | Entity | DB テーブル構造 |
 
@@ -57,8 +56,6 @@ src/
 │   ├── todo.usecase.spec.ts
 │   ├── todo.validator.spec.ts
 │   ├── dto/
-│   │   ├── create-todo.dto.ts
-│   │   ├── update-todo.dto.ts
 │   │   └── todo-response.dto.ts
 │   └── schema/
 │       ├── create-todo.schema.ts
@@ -106,7 +103,6 @@ src/
 | Model | `{name}.model.ts` | `user.model.ts` |
 | Entity | `{name}.entity.ts` | `user.entity.ts` |
 | Repository | `{name}.repository.ts` | `user.repository.ts` |
-| DTO | `{action}-{name}.dto.ts` | `create-user.dto.ts` |
 | Response DTO | `{name}-response.dto.ts` | `user-response.dto.ts` |
 | Zod スキーマ | `{action}-{name}.schema.ts` | `create-user.schema.ts` |
 | Validator | `{name}.validator.ts` | `user.validator.ts` |
@@ -137,7 +133,6 @@ src/
 | Service | `{Name}Service` | `UserService` |
 | Model | `{Name}Model` | `UserModel` |
 | Entity | `{Name}` | `User` |
-| DTO | `{Action}{Name}Dto` | `CreateUserDto` |
 | Response DTO | `{Name}ResponseDto` | `UserResponseDto` |
 | Validator | `{Name}Validator` | `UserValidator` |
 | Guard | `{Name}Guard` | `JwtAuthGuard` |
@@ -662,20 +657,6 @@ export class TodoTag {
 
 ---
 
-## 入力 DTO（Swagger 用）
-
-バリデーション自体は Zod スキーマが行う。DTO は Swagger ドキュメント用途。
-
-```typescript
-export class CreateTodoDto {
-  @ApiProperty({ description: 'TODOのタイトル', example: '買い物に行く' })
-  title: string;
-
-  @ApiPropertyOptional({ description: 'タグ名の配列', example: ['重要'], type: [String] })
-  tags?: string[];
-}
-```
-
 ---
 
 ## Zod スキーマ
@@ -685,6 +666,7 @@ export class CreateTodoDto {
 - **バリデーションルールの定義**（共通ヘルパー `requiredString`, `optionalString` 等を利用）
 - `z.infer` による入力型の生成
 - 日本語エラーメッセージ
+- **`.openapi()` による Swagger メタデータ**（description, example）
 
 ### 配置
 
@@ -704,8 +686,10 @@ import { z } from 'zod';
 import { requiredString } from '../../common/schema';
 
 export const createTodoSchema = z.object({
-  title: requiredString('タイトル'),
-  tags: z.array(requiredString('タグ名')).optional(),
+  title: requiredString('タイトル')
+    .openapi({ description: 'TODOのタイトル', example: '買い物に行く' }),
+  tags: z.array(requiredString('タグ名')).optional()
+    .openapi({ description: 'タグ名の配列', example: ['重要', '買い物'] }),
 });
 
 export type CreateTodoInput = z.infer<typeof createTodoSchema>;
@@ -921,7 +905,8 @@ SwaggerModule.setup('api', app, document);
 
 ### ルール
 
-- 入力 DTO には `@ApiProperty()` / `@ApiPropertyOptional()` を手動で付与
+- Zod スキーマの各フィールドに `.openapi({ description, example })` を付与する
+- Controller には `@ApiBody({ schema: createApiBodySchema(zodSchema) })` で入力スキーマを指定する
 - Controller にはレスポンスの型を `@ApiResponse()` で明示
 - Response DTO には JSDoc コメントで説明を書く
 
@@ -930,6 +915,7 @@ SwaggerModule.setup('api', app, document);
 @ApiTags('todos')
 export class TodoController {
   @Post()
+  @ApiBody({ schema: createApiBodySchema(createTodoSchema) })
   @ApiResponse({ status: 201, description: 'TODO作成成功', type: TodoResponseDto })
   @UsePipes(new ZodValidationPipe(createTodoSchema))
   create(@Body() dto: CreateTodoInput) { ... }
@@ -1067,15 +1053,14 @@ export function validate(config: Record<string, unknown>) {
 1. **Entity** - `src/{name}/{name}.entity.ts`
 2. **Model** - `src/{name}/{name}.model.ts`
 3. **Repository** - `src/{name}/{name}.repository.ts`（公開する場合は `external/`）
-4. **Zod スキーマ** - `src/{name}/schema/` に作成、`index.ts` で再 export
-5. **入力 DTO** - `src/{name}/dto/` に作成（Swagger 用）
-6. **Response DTO** - `src/{name}/dto/{name}-response.dto.ts`
-7. **Validator** - `src/{name}/{name}.validator.ts`（必要な場合）
-8. **Service** - `src/{name}/{name}.service.ts`（計算・加工ロジックがある場合、`external/` に配置）
-9. **Usecase** - `src/{name}/{name}.usecase.ts`
-10. **Controller** - `src/{name}/{name}.controller.ts`
-11. **Module** - `src/{name}/{name}.module.ts`、`AppModule` に登録
-12. **テスト** - `*.spec.ts`（Usecase, Validator, Schema は必須）
+4. **Zod スキーマ** - `src/{name}/schema/` に作成、`index.ts` で再 export、各フィールドに `.openapi()` を付与
+5. **Response DTO** - `src/{name}/dto/{name}-response.dto.ts`
+6. **Validator** - `src/{name}/{name}.validator.ts`（必要な場合）
+7. **Service** - `src/{name}/{name}.service.ts`（計算・加工ロジックがある場合、`external/` に配置）
+8. **Usecase** - `src/{name}/{name}.usecase.ts`
+9. **Controller** - `src/{name}/{name}.controller.ts`、`@ApiBody({ schema: createApiBodySchema(...) })` を付与
+10. **Module** - `src/{name}/{name}.module.ts`、`AppModule` に登録
+11. **テスト** - `*.spec.ts`（Usecase, Validator, Schema は必須）
 
 ---
 
@@ -1090,6 +1075,5 @@ export function validate(config: Record<string, unknown>) {
 | Repository | DB アクセス + 型変換 | 直接 | 受け取る | - | params → Entity → Model |
 | Entity | DB テーブル構造 | - | - | - | Repository 内部のみ |
 | Model | ビジネスデータ | - | - | - | Usecase / Validator / Service |
-| Zod スキーマ | バリデーション + 入力型 | - | - | - | Controller → Usecase |
-| 入力 DTO | Swagger ドキュメント | - | - | - | Swagger UI 用 |
+| Zod スキーマ | バリデーション + 入力型 + Swagger 入力定義 | - | - | - | Controller → Usecase |
 | Response DTO | レスポンス形式 | - | - | - | Controller のみ |

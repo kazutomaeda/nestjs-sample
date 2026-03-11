@@ -11,7 +11,7 @@ import {
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TodoUsecase } from './todo.usecase';
 import { TodoModel } from './todo.model';
 import { TodoResponseDto } from './dto/todo-response.dto';
@@ -22,6 +22,7 @@ import {
   updateTodoSchema,
   UpdateTodoInput,
 } from './schema';
+import { createApiBodySchema } from '../common/schema';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CheckPolicy } from '../auth/decorators/check-policy.decorator';
 import { PoliciesGuard } from '../auth/external/policies.guard';
@@ -68,6 +69,7 @@ export class TodoController {
   }
 
   @Post()
+  @ApiBody({ schema: createApiBodySchema(createTodoSchema) })
   @ApiResponse({
     status: 201,
     description: 'TODO作成成功',
@@ -89,6 +91,7 @@ export class TodoController {
   }
 
   @Patch(':id')
+  @ApiBody({ schema: createApiBodySchema(updateTodoSchema) })
   @ApiResponse({
     status: 200,
     description: 'TODO更新成功',

@@ -8,7 +8,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { AuthUsecase } from './auth.usecase';
@@ -23,6 +23,7 @@ import {
   passwordResetConfirmSchema,
   PasswordResetConfirmInput,
 } from './schema';
+import { createApiBodySchema } from '../common/schema';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { JwtPayload } from './types';
@@ -42,6 +43,7 @@ export class AuthController {
   @Post('login')
   @Public()
   @HttpCode(HttpStatus.OK)
+  @ApiBody({ schema: createApiBodySchema(loginSchema) })
   @ApiResponse({ status: 200, description: 'ログイン成功', type: AuthUserResponseDto })
   @ApiResponse({ status: 401, description: '認証失敗' })
   @UsePipes(new ZodValidationPipe(loginSchema))
@@ -102,6 +104,7 @@ export class AuthController {
   @Post('password-reset/request')
   @Public()
   @HttpCode(HttpStatus.OK)
+  @ApiBody({ schema: createApiBodySchema(passwordResetRequestSchema) })
   @ApiResponse({ status: 200, description: 'パスワードリセットメール送信（ユーザーが存在しない場合も成功を返す）' })
   @UsePipes(new ZodValidationPipe(passwordResetRequestSchema))
   async requestPasswordReset(
@@ -114,6 +117,7 @@ export class AuthController {
   @Post('password-reset/confirm')
   @Public()
   @HttpCode(HttpStatus.OK)
+  @ApiBody({ schema: createApiBodySchema(passwordResetConfirmSchema) })
   @ApiResponse({ status: 200, description: 'パスワードリセット成功' })
   @ApiResponse({ status: 400, description: 'トークンが無効または期限切れ' })
   @UsePipes(new ZodValidationPipe(passwordResetConfirmSchema))

@@ -10,7 +10,7 @@ import {
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TagUsecase } from './tag.usecase';
 import { TagModel } from './tag.model';
 import { TagResponseDto } from './dto/tag-response.dto';
@@ -21,6 +21,7 @@ import {
   updateTagSchema,
   UpdateTagInput,
 } from './schema';
+import { createApiBodySchema } from '../common/schema';
 import { PoliciesGuard } from '../auth/external/policies.guard';
 import { CheckPolicy } from '../auth/decorators/check-policy.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -75,6 +76,7 @@ export class TagController {
 
   @Post()
   @CheckPolicy((ability) => ability.can('create', 'Tag'))
+  @ApiBody({ schema: createApiBodySchema(createTagSchema) })
   @ApiResponse({
     status: 201,
     description: 'タグ作成成功',
@@ -93,6 +95,7 @@ export class TagController {
 
   @Patch(':id')
   @CheckPolicy((ability) => ability.can('update', 'Tag'))
+  @ApiBody({ schema: createApiBodySchema(updateTagSchema) })
   @ApiResponse({
     status: 200,
     description: 'タグ更新成功',
