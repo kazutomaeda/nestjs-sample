@@ -1,21 +1,23 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
-import { UserWithPasswordModel } from './auth.model';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
+import { UserWithPasswordModel } from '../user/user.model';
 import { PasswordReset } from './auth.entity';
 
 @Injectable()
 export class AuthValidator {
-  ensureUserExists(
-    user: UserWithPasswordModel | null,
-  ): UserWithPasswordModel {
+  ensureUserExists(user: UserWithPasswordModel | null): UserWithPasswordModel {
     if (!user) {
-      throw new UnauthorizedException('メールアドレスまたはパスワードが正しくありません');
+      throw new UnauthorizedException(
+        'メールアドレスまたはパスワードが正しくありません',
+      );
     }
     return user;
   }
 
-  ensurePasswordResetValid(
-    passwordReset: PasswordReset | null,
-  ): PasswordReset {
+  ensurePasswordResetValid(passwordReset: PasswordReset | null): PasswordReset {
     if (!passwordReset) {
       throw new BadRequestException('無効なトークンです');
     }
@@ -28,14 +30,14 @@ export class AuthValidator {
     return passwordReset;
   }
 
-  ensureRefreshTokenValid(
-    refreshToken: { expiresAt: Date } | null,
-  ): void {
+  ensureRefreshTokenValid(refreshToken: { expiresAt: Date } | null): void {
     if (!refreshToken) {
       throw new UnauthorizedException('無効なリフレッシュトークンです');
     }
     if (refreshToken.expiresAt < new Date()) {
-      throw new UnauthorizedException('リフレッシュトークンの有効期限が切れています');
+      throw new UnauthorizedException(
+        'リフレッシュトークンの有効期限が切れています',
+      );
     }
   }
 }

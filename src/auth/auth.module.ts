@@ -16,7 +16,8 @@ import { PoliciesGuard } from './external/policies.guard';
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: configService.get<number>('JWT_ACCESS_TOKEN_EXPIRES_IN') ?? 900,
+          expiresIn:
+            configService.get<number>('JWT_ACCESS_TOKEN_EXPIRES_IN') ?? 900,
         },
       }),
     }),

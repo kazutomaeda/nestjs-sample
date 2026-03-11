@@ -7,17 +7,13 @@ async function main() {
   console.log('🌱 Seeding...');
 
   // ==================== テナント ====================
-  const tenantA = await prisma.tenant.upsert({
-    where: { id: 1 },
-    update: {},
-    create: { id: 1, name: 'テナントA' },
-  });
+  const tenantA =
+    (await prisma.tenant.findFirst({ where: { name: 'テナントA' } })) ??
+    (await prisma.tenant.create({ data: { name: 'テナントA' } }));
 
-  const tenantB = await prisma.tenant.upsert({
-    where: { id: 2 },
-    update: {},
-    create: { id: 2, name: 'テナントB' },
-  });
+  const tenantB =
+    (await prisma.tenant.findFirst({ where: { name: 'テナントB' } })) ??
+    (await prisma.tenant.create({ data: { name: 'テナントB' } }));
 
   console.log(`  Tenants: ${tenantA.name}, ${tenantB.name}`);
 
@@ -119,38 +115,17 @@ async function main() {
   );
 
   // ==================== TODO ====================
-  const todo1 = await prisma.todo.upsert({
-    where: { id: 1 },
-    update: {},
-    create: {
-      id: 1,
-      tenantId: tenantA.id,
-      title: 'テナントAのTODO-1',
-      completed: false,
-    },
-  });
+  const todo1 =
+    (await prisma.todo.findFirst({ where: { tenantId: tenantA.id, title: 'テナントAのTODO-1' } })) ??
+    (await prisma.todo.create({ data: { tenantId: tenantA.id, title: 'テナントAのTODO-1', completed: false } }));
 
-  const todo2 = await prisma.todo.upsert({
-    where: { id: 2 },
-    update: {},
-    create: {
-      id: 2,
-      tenantId: tenantA.id,
-      title: 'テナントAのTODO-2',
-      completed: true,
-    },
-  });
+  const todo2 =
+    (await prisma.todo.findFirst({ where: { tenantId: tenantA.id, title: 'テナントAのTODO-2' } })) ??
+    (await prisma.todo.create({ data: { tenantId: tenantA.id, title: 'テナントAのTODO-2', completed: true } }));
 
-  const todo3 = await prisma.todo.upsert({
-    where: { id: 3 },
-    update: {},
-    create: {
-      id: 3,
-      tenantId: tenantB.id,
-      title: 'テナントBのTODO-1',
-      completed: false,
-    },
-  });
+  const todo3 =
+    (await prisma.todo.findFirst({ where: { tenantId: tenantB.id, title: 'テナントBのTODO-1' } })) ??
+    (await prisma.todo.create({ data: { tenantId: tenantB.id, title: 'テナントBのTODO-1', completed: false } }));
 
   console.log(
     `  Todos: ${todo1.title}, ${todo2.title}, ${todo3.title}`,

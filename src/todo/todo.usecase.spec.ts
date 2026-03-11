@@ -93,7 +93,11 @@ describe('TodoUsecase', () => {
     it('トランザクション内でTODOを作成して返す', async () => {
       (mockTodoRepository.create as jest.Mock).mockResolvedValue(mockTodo);
 
-      const result = await usecase.create({ title: 'テストTODO' }, 1, mockAbility);
+      const result = await usecase.create(
+        { title: 'テストTODO' },
+        1,
+        mockAbility,
+      );
 
       expect(result).toEqual(mockTodo);
       expect(mockTransactionService.run).toHaveBeenCalled();
@@ -109,10 +113,14 @@ describe('TodoUsecase', () => {
       ]);
       (mockTodoRepository.create as jest.Mock).mockResolvedValue(mockTodo);
 
-      await usecase.create({
-        title: 'テストTODO',
-        tags: ['既存タグ', '新規タグ'],
-      }, 1, mockAbility);
+      await usecase.create(
+        {
+          title: 'テストTODO',
+          tags: ['既存タグ', '新規タグ'],
+        },
+        1,
+        mockAbility,
+      );
 
       expect(mockTagResolveService.resolveTagIds).toHaveBeenCalledWith(
         ['既存タグ', '新規タグ'],
@@ -140,7 +148,12 @@ describe('TodoUsecase', () => {
       (mockTodoRepository.findById as jest.Mock).mockResolvedValue(mockTodo);
       (mockTodoRepository.update as jest.Mock).mockResolvedValue(updatedTodo);
 
-      const result = await usecase.update(1, { completed: true }, 1, mockAbility);
+      const result = await usecase.update(
+        1,
+        { completed: true },
+        1,
+        mockAbility,
+      );
 
       expect(result).toEqual(updatedTodo);
       expect(mockTodoRepository.findById).toHaveBeenCalledWith(1, mockAbility);

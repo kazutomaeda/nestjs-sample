@@ -25,10 +25,7 @@ export class TagUsecase {
     );
   }
 
-  async create(
-    input: CreateTagInput,
-    tenantId: number,
-  ): Promise<TagModel> {
+  async create(input: CreateTagInput, tenantId: number): Promise<TagModel> {
     const existing = await this.repository.findByName(input.name, tenantId);
     this.validator.ensureNameNotDuplicated(existing, input.name);
 

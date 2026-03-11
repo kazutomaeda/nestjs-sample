@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TransactionClient } from '../prisma/prisma.types';
-import { UserModel, UserWithPasswordModel } from './auth.model';
+import { UserModel, UserWithPasswordModel } from '../user/user.model';
 import { User, RefreshToken, PasswordReset } from './auth.entity';
 import { Role, isValidRole } from './types';
 
@@ -43,7 +43,10 @@ export class AuthRepository {
     return entity as RefreshToken | null;
   }
 
-  async deleteRefreshToken(token: string, tx: TransactionClient): Promise<void> {
+  async deleteRefreshToken(
+    token: string,
+    tx: TransactionClient,
+  ): Promise<void> {
     await tx.refreshToken.delete({
       where: { token },
     });

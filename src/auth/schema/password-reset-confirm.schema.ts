@@ -10,4 +10,6 @@ export const passwordResetConfirmSchema = z.object({
     .openapi({ description: '新しいパスワード', example: 'newpassword123' }),
 });
 
-export type PasswordResetConfirmInput = z.infer<typeof passwordResetConfirmSchema>;
+export type PasswordResetConfirmInput = z.infer<
+  typeof passwordResetConfirmSchema
+>;

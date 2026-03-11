@@ -32,7 +32,7 @@ export class CaslAbilityFactory {
           can('read', 'User', { tenantId: user.tenantId });
           can('manage', 'User', { tenantId: user.tenantId });
           can('read', 'Tenant', { id: user.tenantId });
-          can('manage', 'Tenant', { id: user.tenantId });
+          can('update', 'Tenant', { id: user.tenantId });
         }
         break;
 

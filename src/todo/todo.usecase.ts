@@ -36,7 +36,10 @@ export class TodoUsecase {
       const tagIds = input.tags
         ? await this.tagResolveService.resolveTagIds(input.tags, tenantId, tx)
         : undefined;
-      return this.repository.create({ tenantId, title: input.title, tagIds }, tx);
+      return this.repository.create(
+        { tenantId, title: input.title, tagIds },
+        tx,
+      );
     });
   }
 

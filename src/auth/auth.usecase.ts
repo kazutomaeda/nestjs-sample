@@ -6,7 +6,7 @@ import * as crypto from 'crypto';
 import { TransactionService } from '../prisma/transaction.service';
 import { AuthRepository } from './auth.repository';
 import { AuthValidator } from './auth.validator';
-import { UserModel } from './auth.model';
+import { UserModel } from '../user/user.model';
 import { JwtPayload } from './types';
 import {
   LoginInput,
@@ -37,7 +37,9 @@ export class AuthUsecase {
       this.configService.get<number>('JWT_REFRESH_TOKEN_EXPIRES_IN_DAYS') ?? 7;
   }
 
-  async login(input: LoginInput): Promise<{ user: UserModel; tokens: TokenPair }> {
+  async login(
+    input: LoginInput,
+  ): Promise<{ user: UserModel; tokens: TokenPair }> {
     const userWithPassword = this.validator.ensureUserExists(
       await this.repository.findUserByEmail(input.email),
     );
@@ -48,7 +50,9 @@ export class AuthUsecase {
     );
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('メールアドレスまたはパスワードが正しくありません');
+      throw new UnauthorizedException(
+        'メールアドレスまたはパスワードが正しくありません',
+      );
     }
 
     const tokens = await this.generateTokens(userWithPassword);
@@ -103,7 +107,7 @@ export class AuthUsecase {
 
   async requestPasswordReset(input: PasswordResetRequestInput): Promise<void> {
     const user = await this.repository.findUserByEmail(input.email);
-    
+
     // ユーザーが存在しなくても成功を返す（セキュリティ上の理由）
     if (!user) {
       return;

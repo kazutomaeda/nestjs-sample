@@ -12,7 +12,7 @@ import { ApiTags, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { AuthUsecase } from './auth.usecase';
-import { UserModel } from './auth.model';
+import { UserModel } from '../user/user.model';
 import { AuthUserResponseDto } from './dto/auth-user-response.dto';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import {
@@ -44,7 +44,11 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiBody({ schema: createApiBodySchema(loginSchema) })
-  @ApiResponse({ status: 200, description: 'ログイン成功', type: AuthUserResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'ログイン成功',
+    type: AuthUserResponseDto,
+  })
   @ApiResponse({ status: 401, description: '認証失敗' })
   @UsePipes(new ZodValidationPipe(loginSchema))
   async login(
@@ -61,9 +65,7 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiResponse({ status: 204, description: 'ログアウト成功' })
-  async logout(
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<void> {
+  async logout(@Res({ passthrough: true }) res: Response): Promise<void> {
     const refreshToken = res.req.cookies?.['refresh_token'];
     if (refreshToken) {
       await this.authUsecase.logout(refreshToken);
@@ -94,7 +96,11 @@ export class AuthController {
   }
 
   @Get('me')
-  @ApiResponse({ status: 200, description: 'ユーザー情報取得成功', type: AuthUserResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'ユーザー情報取得成功',
+    type: AuthUserResponseDto,
+  })
   @ApiResponse({ status: 401, description: '認証が必要' })
   async getMe(@CurrentUser() user: JwtPayload): Promise<AuthUserResponseDto> {
     const userModel = await this.authUsecase.getMe(user.sub);
@@ -105,7 +111,11 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiBody({ schema: createApiBodySchema(passwordResetRequestSchema) })
-  @ApiResponse({ status: 200, description: 'パスワードリセットメール送信（ユーザーが存在しない場合も成功を返す）' })
+  @ApiResponse({
+    status: 200,
+    description:
+      'パスワードリセットメール送信（ユーザーが存在しない場合も成功を返す）',
+  })
   @UsePipes(new ZodValidationPipe(passwordResetRequestSchema))
   async requestPasswordReset(
     @Body() input: PasswordResetRequestInput,

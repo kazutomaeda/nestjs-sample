@@ -7,4 +7,6 @@ export const passwordResetRequestSchema = z.object({
     .openapi({ description: 'メールアドレス', example: 'user@example.com' }),
 });
 
-export type PasswordResetRequestInput = z.infer<typeof passwordResetRequestSchema>;
+export type PasswordResetRequestInput = z.infer<
+  typeof passwordResetRequestSchema
+>;

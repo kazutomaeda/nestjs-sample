@@ -28,10 +28,7 @@ export class TagRepository {
     return entity ? this.toModel(entity) : null;
   }
 
-  async findByName(
-    name: string,
-    tenantId: number,
-  ): Promise<TagModel | null> {
+  async findByName(name: string, tenantId: number): Promise<TagModel | null> {
     const entity = await this.prisma.tag.findFirst({
       where: { name, tenantId },
     });

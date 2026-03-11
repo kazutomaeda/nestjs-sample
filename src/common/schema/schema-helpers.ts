@@ -55,3 +55,7 @@ export const dateString = (fieldName: string) =>
 /** オプショナル日付文字列 */
 export const optionalDateString = (fieldName: string) =>
   dateString(fieldName).optional();
+
+/** 必須メールアドレス */
+export const requiredEmail = (fieldName: string) =>
+  requiredString(fieldName).email(`有効な${fieldName}を入力してください`);

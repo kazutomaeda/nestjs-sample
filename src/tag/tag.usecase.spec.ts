@@ -145,9 +145,9 @@ describe('TagUsecase', () => {
         }),
       );
 
-      await expect(usecase.update(1, { name: '緊急' }, 1, mockAbility)).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(
+        usecase.update(1, { name: '緊急' }, 1, mockAbility),
+      ).rejects.toThrow(ConflictException);
     });
   });
 

@@ -13,7 +13,13 @@ const includeTagsOption = {
 
 type TodoWithTodoTags = Todo & {
   todoTags: (TodoTag & {
-    tag: { id: number; tenantId: number; name: string; createdAt: Date; updatedAt: Date };
+    tag: {
+      id: number;
+      tenantId: number;
+      name: string;
+      createdAt: Date;
+      updatedAt: Date;
+    };
   })[];
 };
 
