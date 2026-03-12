@@ -7,6 +7,7 @@ import {
   UsePipes,
   HttpCode,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ApiTags, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -87,7 +88,7 @@ export class AuthController {
     const refreshToken = res.req.cookies?.['refresh_token'];
     if (!refreshToken) {
       this.clearAuthCookies(res);
-      throw new Error('リフレッシュトークンがありません');
+      throw new UnauthorizedException('リフレッシュトークンがありません');
     }
 
     const tokens = await this.authUsecase.refresh(refreshToken);

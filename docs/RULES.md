@@ -111,6 +111,10 @@ src/
 │   └── external/           ← 他モジュールに公開するもの
 │       ├── tag.repository.ts
 │       └── tag-resolve.service.ts
+├── health/
+│   ├── health.module.ts
+│   ├── health.controller.ts
+│   └── prisma-health.indicator.ts
 └── common/
     ├── filters/
     ├── pipes/
@@ -1038,6 +1042,23 @@ export class TodoUsecase {
 }
 ```
 
+### 構造化ログ
+
+- pino (`nestjs-pino`) を使用した JSON 構造化ログ
+- 開発時は `pino-pretty`、本番は JSON stdout
+- ログの外部連携はアプリコード変更不要（pino transport or インフラ層で対応）
+- `app.module.ts` の `LoggerModule.forRoot()` で設定
+- `main.ts` で `bufferLogs: true` + `app.useLogger()` を使用
+
+---
+
+## リクエスト ID
+
+- 全リクエストに `X-Request-Id` ヘッダを付与
+- `pino-http` の `genReqId` で生成（既存ヘッダがあればそれを使用、なければ UUID 生成）
+- ログ出力に自動的に含まれる
+- `ProblemDetailsFilter` のエラーレスポンスにも `requestId` フィールドとして含まれる
+
 ---
 
 ## 設定管理
@@ -1399,3 +1420,21 @@ async login() { ... }
 - 429 レスポンスは `ProblemDetailsFilter` が自動的に RFC 9457 形式に変換する
 - IP ベースの制限（デフォルト動作）
 - 設定値はハードコード。環境変数化が必要な場合は `ThrottlerModule.forRootAsync` + `ConfigService` に変更する
+
+---
+
+## ヘルスチェック
+
+- `GET /health` — 認証不要（`@Public()`）、レートリミット除外（`@SkipThrottle()`）
+- `@nestjs/terminus` を使用
+- `PrismaHealthIndicator` で DB 接続確認
+- k8s readiness/liveness probe に対応
+
+---
+
+## CORS
+
+- 環境変数 `CORS_ORIGIN` で許可オリジン設定
+- カンマ区切りで複数オリジン指定可能
+- 未設定時は `origin: true`（リクエストオリジン動的反映、credentials と互換）
+- `credentials: true` 固定（Cookie 認証のため）

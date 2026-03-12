@@ -5,9 +5,13 @@ import { UserRepository } from './external/user.repository';
 import { UserModel } from './user.model';
 import { UserUsecase } from './user.usecase';
 import { UserValidator } from './user.validator';
+import { CaslAbilityFactory } from '../auth/external/casl-ability.factory';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockAbility = {} as any;
+const mockAbility = new CaslAbilityFactory().createForUser({
+  sub: 1,
+  tenantId: 1,
+  role: 'tenant_admin',
+});
 
 const mockUser = new UserModel({
   id: 1,

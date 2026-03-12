@@ -5,8 +5,13 @@ import { TagRepository } from './external/tag.repository';
 import { TagModel } from './tag.model';
 import { TagUsecase } from './tag.usecase';
 import { TagValidator } from './tag.validator';
+import { CaslAbilityFactory } from '../auth/external/casl-ability.factory';
 
-const mockAbility = {} as any;
+const mockAbility = new CaslAbilityFactory().createForUser({
+  sub: 1,
+  tenantId: 1,
+  role: 'tenant_admin',
+});
 
 const mockTag = new TagModel({
   id: 1,

@@ -2,26 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { accessibleBy } from '@casl/prisma';
 import { PrismaService } from '../prisma/prisma.service';
 import { TransactionClient } from '../prisma/prisma.types';
+import { Prisma } from '@prisma/client';
 import { TagModel } from '../tag/tag.model';
 import { TodoModel } from './todo.model';
-import { Todo, TodoTag } from './todo.entity';
 import { AppAbility } from '../auth/external/casl-ability.factory';
 
 const includeTagsOption = {
   todoTags: { include: { tag: true } },
-};
+} as const;
 
-type TodoWithTodoTags = Todo & {
-  todoTags: (TodoTag & {
-    tag: {
-      id: number;
-      tenantId: number;
-      name: string;
-      createdAt: Date;
-      updatedAt: Date;
-    };
-  })[];
-};
+type TodoWithTodoTags = Prisma.TodoGetPayload<{
+  include: typeof includeTagsOption;
+}>;
 
 @Injectable()
 export class TodoRepository {
@@ -33,7 +25,7 @@ export class TodoRepository {
       orderBy: { createdAt: 'desc' },
       include: includeTagsOption,
     });
-    return entities.map((entity) => this.toModel(entity as TodoWithTodoTags));
+    return entities.map((entity) => this.toModel(entity));
   }
 
   async findById(id: number, ability: AppAbility): Promise<TodoModel | null> {
@@ -44,7 +36,7 @@ export class TodoRepository {
       },
       include: includeTagsOption,
     });
-    return entity ? this.toModel(entity as TodoWithTodoTags) : null;
+    return entity ? this.toModel(entity) : null;
   }
 
   async create(
@@ -63,7 +55,7 @@ export class TodoRepository {
       },
       include: includeTagsOption,
     });
-    return this.toModel(entity as TodoWithTodoTags);
+    return this.toModel(entity);
   }
 
   async update(
@@ -89,7 +81,7 @@ export class TodoRepository {
       },
       include: includeTagsOption,
     });
-    return this.toModel(entity as TodoWithTodoTags);
+    return this.toModel(entity);
   }
 
   async delete(id: number, tx: TransactionClient): Promise<TodoModel> {
@@ -98,7 +90,7 @@ export class TodoRepository {
       where: { id },
       include: includeTagsOption,
     });
-    return this.toModel(entity as TodoWithTodoTags);
+    return this.toModel(entity);
   }
 
   private toModel(entity: TodoWithTodoTags): TodoModel {

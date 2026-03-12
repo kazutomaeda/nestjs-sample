@@ -27,12 +27,15 @@ export class ProblemDetailsFilter implements ExceptionFilter {
         ? exception.message
         : 'Internal Server Error';
 
+    const requestId = request.headers['x-request-id'] as string | undefined;
+
     const body: Record<string, unknown> = {
       type: `https://httpstatuses.com/${status}`,
       title: HttpStatus[status],
       status,
       detail,
       instance: request.url,
+      ...(requestId && { requestId }),
     };
 
     // exceptionFactory から渡されたバリデーションエラーを errors フィールドに変換

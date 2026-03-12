@@ -22,6 +22,10 @@ class EnvironmentVariables {
   @IsString()
   @IsOptional()
   NODE_ENV?: string;
+
+  @IsString()
+  @IsOptional()
+  CORS_ORIGIN?: string;
 }
 
 export function validate(config: Record<string, unknown>) {

@@ -2,13 +2,18 @@ import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { TransactionService } from '../prisma/transaction.service';
 import { UserRepository } from '../user/external/user.repository';
+import { UserModel } from '../user/user.model';
 import { TenantRepository } from './tenant.repository';
 import { TenantModel } from './tenant.model';
 import { TenantUsecase } from './tenant.usecase';
 import { TenantValidator } from './tenant.validator';
+import { CaslAbilityFactory } from '../auth/external/casl-ability.factory';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockAbility = {} as any;
+const mockAbility = new CaslAbilityFactory().createForUser({
+  sub: 1,
+  tenantId: 1,
+  role: 'tenant_admin',
+});
 
 const mockTenant = new TenantModel({
   id: 1,
@@ -99,8 +104,17 @@ describe('TenantUsecase', () => {
     it('トランザクション内でテナントと管理者ユーザーを作成して返す', async () => {
       jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashedPassword' as never);
       (mockTenantRepository.create as jest.Mock).mockResolvedValue(mockTenant);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (mockUserRepository.create as jest.Mock).mockResolvedValue({} as any);
+      (mockUserRepository.create as jest.Mock).mockResolvedValue(
+        new UserModel({
+          id: 1,
+          tenantId: 1,
+          role: 'tenant_admin',
+          email: 'admin@example.com',
+          name: '田中太郎',
+          createdAt: new Date('2024-01-01'),
+          updatedAt: new Date('2024-01-01'),
+        }),
+      );
 
       const result = await usecase.create({
         name: '株式会社サンプル',
