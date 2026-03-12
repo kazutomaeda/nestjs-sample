@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== 認証・テナント ====================
+
+model Tenant {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  users     User[]
+  todos     Todo[]
+  tags      Tag[]
+
+  @@map("Tenants")
+}
+
+model User {
+  id             Int             @id @default(autoincrement())
+  tenantId       Int?            @map("tenant_id")
+  role           String          // 'system_admin' | 'tenant_admin' | 'tenant_user'
+  email          String          @unique
+  passwordHash   String          @map("password_hash")
+  name           String
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  tenant         Tenant?         @relation(fields: [tenantId], references: [id])
+  refreshTokens  RefreshToken[]
+  passwordResets PasswordReset[]
+
+  @@map("Users")
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("RefreshTokens")
+}
+
+model PasswordReset {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("PasswordResets")
+}
+
+// ==================== ドメイン ====================
+
+model Todo {
+  id        Int       @id @default(autoincrement())
+  tenantId  Int       @map("tenant_id")
+  title     String
+  completed Boolean   @default(false)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  todoTags  TodoTag[]
+
+  @@map("Todos")
+}
+
+model Tag {
+  id        Int       @id @default(autoincrement())
+  tenantId  Int       @map("tenant_id")
+  name      String
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  todoTags  TodoTag[]
+
+  @@unique([tenantId, name])
+  @@map("Tags")
+}
+
+model TodoTag {
+  todoId Int  @map("todo_id")
+  tagId  Int  @map("tag_id")
+  todo   Todo @relation(fields: [todoId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  tag    Tag  @relation(fields: [tagId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+
+  @@id([todoId, tagId])
+  @@map("TodoTags")
+}

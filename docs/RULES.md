@@ -890,7 +890,10 @@ Prisma を使用する。TypeORM は使わない。
 
 ### スキーマ
 
-- `prisma/schema.prisma` にスキーマを定義する
+- `prisma/schema.prisma` は `yarn db:use <provider>` で自動生成される（直接編集しない）
+- スキーマの変更は `prisma/schemas/schema.{provider}.prisma` に対して行い、全4ファイルに反映する
+- 対応 DB: sqlserver, postgresql, mysql, sqlite
+- DB 固有の差異（リレーションの `onUpdate` / `onDelete` 等）は各スキーマファイルで個別に管理する
 - ドメインごとに Entity ファイル (`{name}.entity.ts`) をドメインモジュール内に作成する
 
 ### PrismaService

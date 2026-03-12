@@ -34,6 +34,19 @@ yarn start:dev
 
 起動後 http://localhost:3000/api で Swagger UI を確認できる。
 
+### DB の切り替え
+
+デフォルトは SQL Server。他の DB を使用する場合は以下の手順で切り替える。
+
+```bash
+# 1. Prisma スキーマを切り替え（prisma generate も自動実行される）
+yarn db:use postgresql  # sqlserver | postgresql | mysql | sqlite
+
+# 2. .env の DATABASE_URL を対応する接続文字列に変更
+```
+
+対応 DB: SQL Server / PostgreSQL / MySQL / SQLite
+
 ### シードユーザー
 
 | ユーザー | メールアドレス | パスワード | ロール |
@@ -53,6 +66,7 @@ yarn start:dev
 | `yarn lint` | ESLint 実行 |
 | `yarn test` | 単体テスト実行 |
 | `yarn test:e2e` | E2E テスト実行 |
+| `yarn db:use <provider>` | DB プロバイダ切り替え (sqlserver / postgresql / mysql / sqlite) |
 | `yarn prisma studio` | Prisma Studio (DB GUI) 起動 |
 | `make db` | SQL Server コンソールにログイン |
 

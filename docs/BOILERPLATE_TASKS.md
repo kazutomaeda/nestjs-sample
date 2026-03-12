@@ -33,10 +33,10 @@
 
 | # | タスク | 詳細 | 優先度 | 状態 |
 |---|--------|------|--------|------|
-| 3.1 | PostgreSQL対応 | schema.prisma / docker-compose / 接続設定 | 🟡 高 | ⬜ |
-| 3.2 | MySQL対応 | schema.prisma / docker-compose / 接続設定 | 🟡 高 | ⬜ |
+| 3.1 | PostgreSQL対応 | schema.prisma / docker-compose / 接続設定 | 🟡 高 | ✅ |
+| 3.2 | MySQL対応 | schema.prisma / docker-compose / 接続設定 | 🟡 高 | ✅ |
 | 3.3 | SQL Server維持 | 現在のまま | ✅ 済 | ✅ |
-| 3.4 | DB切り替えガイド | ドキュメント化 | 🟡 高 | ⬜ |
+| 3.4 | DB切り替えガイド | ドキュメント化 | 🟡 高 | ✅ |
 
 ---
 
