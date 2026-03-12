@@ -9,7 +9,6 @@ import {
   Patch,
   Post,
   UseGuards,
-  UsePipes,
 } from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { UserUsecase } from './user.usecase';
@@ -77,9 +76,8 @@ export class UserController {
   })
   @ApiResponse({ status: 400, description: 'バリデーションエラー' })
   @CheckPolicy((ability) => ability.can('create', 'User'))
-  @UsePipes(new ZodValidationPipe(createUserSchema))
   async create(
-    @Body() dto: CreateUserInput,
+    @Body(new ZodValidationPipe(createUserSchema)) dto: CreateUserInput,
     @CurrentUser() user: JwtPayload,
   ): Promise<UserResponseDto> {
     const tenantId = dto.tenantId ?? user.tenantId;

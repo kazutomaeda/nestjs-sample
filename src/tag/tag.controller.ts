@@ -8,7 +8,6 @@ import {
   Patch,
   Post,
   UseGuards,
-  UsePipes,
 } from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TagUsecase } from './tag.usecase';
@@ -84,9 +83,8 @@ export class TagController {
   })
   @ApiResponse({ status: 400, description: 'バリデーションエラー' })
   @ApiResponse({ status: 409, description: 'タグ名が重複' })
-  @UsePipes(new ZodValidationPipe(createTagSchema))
   async create(
-    @Body() dto: CreateTagInput,
+    @Body(new ZodValidationPipe(createTagSchema)) dto: CreateTagInput,
     @CurrentUser() user: JwtPayload,
   ): Promise<TagResponseDto> {
     const tag = await this.tagUsecase.create(dto, user.tenantId!);

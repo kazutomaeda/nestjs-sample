@@ -17,7 +17,6 @@ model Tenant {
   users     User[]
   todos     Todo[]
   tags      Tag[]
-
   @@map("tenants")
 }
 

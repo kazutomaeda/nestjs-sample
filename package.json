@@ -16,7 +16,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "db:use": "bash scripts/use-db.sh"
+    "db:use": "bash scripts/use-db.sh",
+    "scaffold": "bash scripts/scaffold.sh"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^7.0.0",

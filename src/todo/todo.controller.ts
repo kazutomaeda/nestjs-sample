@@ -10,7 +10,6 @@ import {
   Post,
   Query,
   UseGuards,
-  UsePipes,
 } from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TodoUsecase } from './todo.usecase';
@@ -91,9 +90,8 @@ export class TodoController {
   })
   @ApiResponse({ status: 400, description: 'バリデーションエラー' })
   @CheckPolicy((ability) => ability.can('create', 'Todo'))
-  @UsePipes(new ZodValidationPipe(createTodoSchema))
   async create(
-    @Body() dto: CreateTodoInput,
+    @Body(new ZodValidationPipe(createTodoSchema)) dto: CreateTodoInput,
     @CurrentUser() user: JwtPayload,
   ): Promise<TodoResponseDto> {
     if (user.tenantId === null) {
