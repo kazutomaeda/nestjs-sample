@@ -7,6 +7,15 @@ import { TagModel } from '../tag/tag.model';
 import { TodoModel } from './todo.model';
 import { AppAbility } from '../auth/external/casl-ability.factory';
 
+export interface FindAllQuery {
+  page: number;
+  limit: number;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+  title?: string;
+  completed?: boolean;
+}
+
 const includeTagsOption = {
   todoTags: { include: { tag: true } },
 } as const;
@@ -19,13 +28,41 @@ type TodoWithTodoTags = Prisma.TodoGetPayload<{
 export class TodoRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(ability: AppAbility): Promise<TodoModel[]> {
-    const entities = await this.prisma.todo.findMany({
-      where: accessibleBy(ability).Todo,
-      orderBy: { createdAt: 'desc' },
-      include: includeTagsOption,
-    });
-    return entities.map((entity) => this.toModel(entity));
+  async findAll(
+    ability: AppAbility,
+    query: FindAllQuery,
+  ): Promise<{ items: TodoModel[]; totalItems: number }> {
+    const where: Prisma.TodoWhereInput = {
+      AND: [
+        accessibleBy(ability).Todo,
+        ...(query.title
+          ? [{ title: { contains: query.title } }]
+          : []),
+        ...(query.completed !== undefined
+          ? [{ completed: query.completed }]
+          : []),
+      ],
+    };
+
+    const paginate = query.limit > 0;
+
+    const [entities, totalItems] = await Promise.all([
+      this.prisma.todo.findMany({
+        where,
+        orderBy: { [query.sortBy]: query.sortOrder },
+        ...(paginate && {
+          skip: (query.page - 1) * query.limit,
+          take: query.limit,
+        }),
+        include: includeTagsOption,
+      }),
+      this.prisma.todo.count({ where }),
+    ]);
+
+    return {
+      items: entities.map((entity) => this.toModel(entity)),
+      totalItems,
+    };
   }
 
   async findById(id: number, ability: AppAbility): Promise<TodoModel | null> {

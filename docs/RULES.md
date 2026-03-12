@@ -1441,3 +1441,54 @@ async login() { ... }
 - カンマ区切りで複数オリジン指定可能
 - 未設定時は `origin: true`（リクエストオリジン動的反映、credentials と互換）
 - `credentials: true` 固定（Cookie 認証のため）
+
+## ページネーション・ソート・フィルタ
+
+### 共通パターン
+
+一覧取得エンドポイントには共通のページネーション・ソート・フィルタパターンを適用する。
+
+**共通スキーマ** (`src/common/schema/pagination.schema.ts`):
+
+- `paginationSchema` — `page`（デフォルト: 1）、`limit`（デフォルト: 20、最大: 100）
+- `sortOrderSchema` — `asc` / `desc`（デフォルト: `desc`）
+
+**レスポンス型** (`src/common/dto/paginated-response.dto.ts`):
+
+- `PaginatedResponseDto<T>` — `{ items: T[], meta: { page, limit, totalItems, totalPages } }`
+
+### limit=0 で全件取得
+
+`limit=0` を指定すると、ページネーションなしで全件を返す。
+
+- Repository は `skip` / `take` を省略する
+- `meta` は `{ page: 1, limit: 0, totalItems: N, totalPages: 1 }` を返す
+
+### ドメイン固有のクエリスキーマ
+
+各ドメインの `schema/list-{domain}.schema.ts` に配置する。
+
+```typescript
+// 例: src/todo/schema/list-todo.schema.ts
+export const listTodoSchema = paginationSchema.extend({
+  sortBy: z.enum(['createdAt', 'title']).default('createdAt'),
+  sortOrder: sortOrderSchema,
+  title: z.string().min(1).optional(),       // 部分一致
+  completed: z.enum(['true', 'false']).transform(...).optional(),  // 完全一致
+});
+```
+
+### 各レイヤの責務
+
+| レイヤ | 責務 |
+|--------|------|
+| Controller | `@Query(new ZodValidationPipe(schema))` でバリデーション。`PaginatedResponseDto` に変換して返す |
+| Usecase | クエリパラメータを Repository に透過する |
+| Repository | `where` / `orderBy` / `skip` / `take` を構築。`{ items, totalItems }` を返す |
+
+### 新規ドメインへの適用手順
+
+1. `src/{domain}/schema/list-{domain}.schema.ts` を作成（`paginationSchema.extend(...)` で拡張）
+2. Repository の `findAll` に `query` 引数を追加し、`{ items, totalItems }` を返す
+3. Usecase の `findAll` にクエリパラメータを透過
+4. Controller で `@Query(new ZodValidationPipe(...))` を追加し、`PaginatedResponseDto` で返す

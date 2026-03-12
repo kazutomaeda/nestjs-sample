@@ -8,6 +8,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
@@ -21,8 +22,11 @@ import {
   CreateTodoInput,
   updateTodoSchema,
   UpdateTodoInput,
+  listTodoSchema,
+  ListTodoInput,
 } from './schema';
 import { createApiBodySchema } from '../common/schema';
+import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CheckPolicy } from '../auth/decorators/check-policy.decorator';
 import { PoliciesGuard } from '../auth/external/policies.guard';
@@ -41,14 +45,24 @@ export class TodoController {
   @Get()
   @ApiResponse({
     status: 200,
-    description: 'TODO一覧取得',
-    type: [TodoResponseDto],
+    description: 'TODO一覧取得（ページネーション対応）',
   })
   @CheckPolicy((ability) => ability.can('read', 'Todo'))
-  async findAll(@CurrentUser() user: JwtPayload): Promise<TodoResponseDto[]> {
+  async findAll(
+    @Query(new ZodValidationPipe(listTodoSchema)) query: ListTodoInput,
+    @CurrentUser() user: JwtPayload,
+  ): Promise<PaginatedResponseDto<TodoResponseDto>> {
     const ability = this.caslAbilityFactory.createForUser(user);
-    const todos = await this.todoUsecase.findAll(ability);
-    return todos.map((todo) => this.toResponse(todo));
+    const { items, totalItems } = await this.todoUsecase.findAll(ability, query);
+    return {
+      items: items.map((todo) => this.toResponse(todo)),
+      meta: {
+        page: query.limit > 0 ? query.page : 1,
+        limit: query.limit,
+        totalItems,
+        totalPages: query.limit > 0 ? Math.ceil(totalItems / query.limit) : 1,
+      },
+    };
   }
 
   @Get(':id')

@@ -4,8 +4,9 @@ import { TagResolveService } from '../tag/external/tag-resolve.service';
 import { TodoRepository } from './todo.repository';
 import { TodoModel } from './todo.model';
 import { TodoValidator } from './todo.validator';
-import { CreateTodoInput, UpdateTodoInput } from './schema';
+import { CreateTodoInput, UpdateTodoInput, ListTodoInput } from './schema';
 import { AppAbility } from '../auth/external/casl-ability.factory';
+import { FindAllQuery } from './todo.repository';
 
 @Injectable()
 export class TodoUsecase {
@@ -16,8 +17,19 @@ export class TodoUsecase {
     private readonly tagResolveService: TagResolveService,
   ) {}
 
-  async findAll(ability: AppAbility): Promise<TodoModel[]> {
-    return this.repository.findAll(ability);
+  async findAll(
+    ability: AppAbility,
+    input: ListTodoInput,
+  ): Promise<{ items: TodoModel[]; totalItems: number }> {
+    const query: FindAllQuery = {
+      page: input.page,
+      limit: input.limit,
+      sortBy: input.sortBy,
+      sortOrder: input.sortOrder,
+      title: input.title,
+      completed: input.completed,
+    };
+    return this.repository.findAll(ability, query);
   }
 
   async findOne(id: number, ability: AppAbility): Promise<TodoModel> {
