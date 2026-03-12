@@ -1,17 +1,15 @@
 services:
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2019-latest
-    platform: linux/amd64
-    container_name: nestjs-sample-sqlserver
+  mysql:
+    image: mysql:8.0
+    container_name: nestjs-sample-mysql
     ports:
-      - "1434:1433"
+      - "3307:3306"
     environment:
-      ACCEPT_EULA: "Y"
-      MSSQL_PID: "Developer"
-      SA_PASSWORD: "YourStrong!Passw0rd"
+      MYSQL_ROOT_PASSWORD: "password"
+      MYSQL_DATABASE: "nestjs_sample"
     volumes:
-      - sqlserver-data:/var/opt/mssql
+      - mysql-data:/var/lib/mysql
     restart: unless-stopped
 
 volumes:
-  sqlserver-data:
+  mysql-data:

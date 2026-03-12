@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlserver"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -18,7 +18,7 @@ model Tenant {
   todos     Todo[]
   tags      Tag[]
 
-  @@map("Tenants")
+  @@map("tenants")
 }
 
 model User {
@@ -34,7 +34,7 @@ model User {
   refreshTokens  RefreshToken[]
   passwordResets PasswordReset[]
 
-  @@map("Users")
+  @@map("users")
 }
 
 model RefreshToken {
@@ -45,7 +45,7 @@ model RefreshToken {
   createdAt DateTime @default(now()) @map("created_at")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("RefreshTokens")
+  @@map("refresh_tokens")
 }
 
 model PasswordReset {
@@ -57,7 +57,7 @@ model PasswordReset {
   createdAt DateTime  @default(now()) @map("created_at")
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("PasswordResets")
+  @@map("password_resets")
 }
 
 // ==================== ドメイン ====================
@@ -72,7 +72,7 @@ model Todo {
   tenant    Tenant    @relation(fields: [tenantId], references: [id])
   todoTags  TodoTag[]
 
-  @@map("Todos")
+  @@map("todos")
 }
 
 model Tag {
@@ -85,15 +85,15 @@ model Tag {
   todoTags  TodoTag[]
 
   @@unique([tenantId, name])
-  @@map("Tags")
+  @@map("tags")
 }
 
 model TodoTag {
   todoId Int  @map("todo_id")
   tagId  Int  @map("tag_id")
-  todo   Todo @relation(fields: [todoId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  tag    Tag  @relation(fields: [tagId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  todo   Todo @relation(fields: [todoId], references: [id], onDelete: NoAction)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: NoAction)
 
   @@id([todoId, tagId])
-  @@map("TodoTags")
+  @@map("todo_tags")
 }
