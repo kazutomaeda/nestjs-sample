@@ -45,6 +45,48 @@
 src/
 ├── main.ts
 ├── app.module.ts
+├── auth/
+│   ├── auth.module.ts
+│   ├── auth.controller.ts
+│   ├── auth.usecase.ts
+│   ├── auth.validator.ts
+│   ├── auth.repository.ts
+│   ├── auth.entity.ts
+│   ├── decorators/
+│   │   ├── public.decorator.ts
+│   │   ├── current-user.decorator.ts
+│   │   └── check-policy.decorator.ts
+│   ├── external/
+│   │   ├── jwt-auth.guard.ts
+│   │   ├── policies.guard.ts
+│   │   └── casl-ability.factory.ts
+│   ├── types/
+│   │   ├── index.ts
+│   │   ├── role.type.ts
+│   │   └── jwt-payload.type.ts
+│   ├── dto/
+│   └── schema/
+├── tenant/
+│   ├── tenant.module.ts
+│   ├── tenant.controller.ts
+│   ├── tenant.usecase.ts
+│   ├── tenant.validator.ts
+│   ├── tenant.repository.ts
+│   ├── tenant.model.ts
+│   ├── tenant.entity.ts
+│   ├── dto/
+│   └── schema/
+├── user/
+│   ├── user.module.ts
+│   ├── user.controller.ts
+│   ├── user.usecase.ts
+│   ├── user.validator.ts
+│   ├── user.model.ts
+│   ├── user.entity.ts
+│   ├── external/
+│   │   └── user.repository.ts
+│   ├── dto/
+│   └── schema/
 ├── todo/
 │   ├── todo.module.ts
 │   ├── todo.controller.ts
@@ -1077,3 +1119,283 @@ export function validate(config: Record<string, unknown>) {
 | Model | ビジネスデータ | - | - | - | Usecase / Validator / Service |
 | Zod スキーマ | バリデーション + 入力型 + Swagger 入力定義 | - | - | - | Controller → Usecase |
 | Response DTO | レスポンス形式 | - | - | - | Controller のみ |
+
+---
+
+## 認証
+
+### 方式
+
+JWT トークンを httpOnly Cookie で管理する。Bearer ヘッダは使用しない。
+
+| トークン | Cookie 名 | 有効期限 | path | 保存先 |
+|---------|-----------|---------|------|--------|
+| Access Token | `access_token` | 15 分 | `/`（デフォルト） | Cookie のみ（DB 保存なし） |
+| Refresh Token | `refresh_token` | 7 日 | `/auth` | Cookie + DB（RefreshTokens テーブル） |
+
+### Cookie 設定
+
+```typescript
+{
+  httpOnly: true,          // JS からアクセス不可
+  secure: isProduction,    // 本番では HTTPS 必須
+  sameSite: 'strict',      // CSRF 防止
+}
+```
+
+### グローバル認証ガード
+
+`JwtAuthGuard` を `main.ts` でグローバルガードとして登録する。全エンドポイントに認証を強制し、認証不要なエンドポイントには `@Public()` デコレータで除外する。
+
+```typescript
+// main.ts
+const jwtAuthGuard = app.get(JwtAuthGuard);
+app.useGlobalGuards(jwtAuthGuard);
+
+// 認証不要にする場合
+@Public()
+@Post('login')
+async login() { ... }
+```
+
+### 認証フロー
+
+```
+[ログイン]
+  Client → POST /auth/login (email, password)
+  Server → bcrypt.compare でパスワード検証
+         → Access Token (JWT) + Refresh Token (ランダム文字列) 生成
+         → Cookie にセット + Refresh Token を DB に保存
+  Client ← Set-Cookie: access_token, refresh_token
+
+[認証付きリクエスト]
+  Client → GET /todos (Cookie: access_token=xxx)
+  JwtAuthGuard → Cookie から access_token を取得 → JWT 検証
+               → request.user に JwtPayload をセット
+
+[トークンリフレッシュ]
+  Client → POST /auth/refresh (Cookie: refresh_token=xxx)
+  Server → DB でリフレッシュトークン検証 → 古いトークン削除
+         → 新しい Access Token + Refresh Token 生成（トークンローテーション）
+
+[ログアウト]
+  Client → POST /auth/logout
+  Server → DB からリフレッシュトークン削除 → Cookie クリア
+```
+
+### JwtPayload
+
+JWT に含まれるペイロード。`@CurrentUser()` デコレータで取得できる。
+
+```typescript
+interface JwtPayload {
+  sub: number;              // ユーザー ID
+  tenantId: number | null;  // テナント ID（system_admin は null）
+  role: Role;               // 'system_admin' | 'tenant_admin' | 'tenant_user'
+}
+```
+
+### パスワードリセット
+
+1. `POST /auth/password-reset/request` でリセットトークンを生成（ユーザーが存在しなくても 200 を返す — ユーザー列挙防止）
+2. `POST /auth/password-reset/confirm` でトークン + 新パスワードを送信
+3. パスワード変更時、そのユーザーの全リフレッシュトークンを削除（全セッション無効化）
+
+### 認証に関するファイル配置
+
+| ファイル | 責務 |
+|---------|------|
+| `auth/auth.controller.ts` | 認証エンドポイント (login, logout, refresh, me, password-reset) |
+| `auth/auth.usecase.ts` | 認証ビジネスロジック |
+| `auth/auth.repository.ts` | User / RefreshToken / PasswordReset の DB アクセス |
+| `auth/auth.validator.ts` | 認証バリデーション (ensureUserExists, ensureRefreshTokenValid 等) |
+| `auth/external/jwt-auth.guard.ts` | グローバル認証ガード（Cookie から JWT を検証） |
+| `auth/decorators/public.decorator.ts` | `@Public()` — 認証不要マーク |
+| `auth/decorators/current-user.decorator.ts` | `@CurrentUser()` — JWT ペイロード取得 |
+| `auth/types/jwt-payload.type.ts` | JwtPayload 型定義 |
+| `auth/types/role.type.ts` | Role 型定義 (`system_admin`, `tenant_admin`, `tenant_user`) |
+
+### ルール
+
+- **パスワードは bcrypt でハッシュ化する**（ソルトラウンド: 10）
+- **リフレッシュトークンは `crypto.randomBytes(32)` で生成する**
+- **トークンリフレッシュ時は古いトークンを削除して新しいトークンを発行する**（トークンローテーション）
+- **パスワード変更時は全リフレッシュトークンを削除する**
+- **ユーザー列挙を防止する**: パスワードリセット要求は、ユーザーが存在しなくても成功レスポンスを返す
+- `auth/auth.repository.ts` は Auth モジュール内部でのみ使用する（export しない）
+
+---
+
+## 認可
+
+### CASL によるアビリティベース認可
+
+`@casl/ability` + `@casl/prisma` を使用し、ロールに応じた権限を定義する。
+
+### アビリティ定義
+
+`CaslAbilityFactory.createForUser(user)` でロールに応じたアビリティを生成する。
+
+| ロール | リソース | 権限 | 条件 |
+|--------|---------|------|------|
+| `system_admin` | all | manage | なし（全操作可能） |
+| `tenant_admin` | Todo | manage | `tenantId = user.tenantId` |
+| `tenant_admin` | Tag | manage | `tenantId = user.tenantId` |
+| `tenant_admin` | User | manage | `tenantId = user.tenantId` |
+| `tenant_admin` | Tenant | read, update | `id = user.tenantId` |
+| `tenant_user` | Todo | read, create, update | `tenantId = user.tenantId` |
+| `tenant_user` | Tag | read | `tenantId = user.tenantId` |
+| `tenant_user` | User | read, update | 自分自身のみ (`id = user.sub`) |
+
+### 使い方
+
+認可は 2 段階で適用する。
+
+**1. Controller で `@CheckPolicy()` + `PoliciesGuard`**
+
+エンドポイントレベルでの認可チェック。操作自体が許可されているかを確認する。
+
+```typescript
+@Controller('todos')
+@UseGuards(PoliciesGuard)
+export class TodoController {
+  @Get()
+  @CheckPolicy((ability) => ability.can('read', 'Todo'))
+  async findAll(@CurrentUser() user: JwtPayload) { ... }
+
+  @Delete(':id')
+  @CheckPolicy((ability) => ability.can('delete', 'Todo'))
+  async remove(@Param('id') id: number) { ... }
+}
+```
+
+**2. Usecase / Repository で `AppAbility` を使ったデータフィルタリング**
+
+CASL の条件付きルールにより、Repository のクエリレベルでテナント分離を実現する。`@casl/prisma` の `accessibleBy` を使い、Prisma の `where` 句に CASL の条件を自動注入する。
+
+```typescript
+// Repository での使用例
+async findAll(ability: AppAbility): Promise<TodoModel[]> {
+  const entities = await this.prisma.todo.findMany({
+    where: accessibleBy(ability).Todo,
+    // ...
+  });
+  return entities.map((e) => this.toModel(e));
+}
+```
+
+### 認可に関するファイル配置
+
+| ファイル | 責務 |
+|---------|------|
+| `auth/external/casl-ability.factory.ts` | ロールごとのアビリティ定義 |
+| `auth/external/policies.guard.ts` | `@CheckPolicy()` を評価するガード |
+| `auth/decorators/check-policy.decorator.ts` | `@CheckPolicy()` デコレータ定義 |
+
+### ルール
+
+- **`CaslAbilityFactory` はロールの追加・権限変更の唯一の変更箇所**
+- `PoliciesGuard` は Controller ごとに `@UseGuards(PoliciesGuard)` で適用する（グローバルガードではない）
+- `AppAbility` は Controller で生成し、Usecase → Repository に引数として渡す
+- **`@Global()` は使わない** — AuthModule を各モジュールの `imports` に明示的に追加する
+
+---
+
+## マルチテナント
+
+### データ分離方式
+
+共有 DB・共有スキーマ方式を採用する。各テーブルに `tenantId` カラムを持ち、CASL の条件付きルール (`{ tenantId: user.tenantId }`) でクエリレベルのフィルタリングを行う。
+
+### テナントスキーマ
+
+```
+Tenants
+├── id (PK, autoincrement)
+├── name
+├── created_at
+└── updated_at
+
+Users
+├── id (PK, autoincrement)
+├── tenant_id (FK → Tenants.id, nullable)  ← system_admin は null
+├── role ('system_admin' | 'tenant_admin' | 'tenant_user')
+├── email (unique)
+├── password_hash
+├── name
+├── created_at
+└── updated_at
+```
+
+### テナント作成フロー
+
+`POST /tenants` はテナントと管理者ユーザーをアトミックに作成する。
+
+```typescript
+async create(input: CreateTenantInput): Promise<TenantModel> {
+  const passwordHash = await bcrypt.hash(input.admin.password, 10);
+  return this.transaction.run(async (tx) => {
+    const tenant = await this.tenantRepository.create({ name: input.name }, tx);
+    await this.userRepository.create({
+      tenantId: tenant.id,
+      role: 'tenant_admin',
+      email: input.admin.email,
+      passwordHash,
+      name: input.admin.name,
+    }, tx);
+    return tenant;
+  });
+}
+```
+
+### テナント分離の仕組み
+
+1. ユーザーがログインすると JWT に `tenantId` が含まれる
+2. CASL のアビリティ定義で `{ tenantId: user.tenantId }` の条件を設定
+3. Repository で `accessibleBy(ability).Todo` を `where` 句に渡す
+4. Prisma が自動的にテナントフィルタ付きの SQL を生成
+
+**意図的にテナント ID をハードコードで指定する処理は書かない。** CASL の条件が自動的にフィルタリングする。
+
+### ルール
+
+- **`tenantId` による手動フィルタリング (`where: { tenantId }`) は禁止** — CASL の `accessibleBy` を使う
+- `system_admin` の `tenantId` は `null`。CASL で `can('manage', 'all')` を設定するため、全テナントのデータにアクセスできる
+- テナント作成は `system_admin` のみ可能
+- テナント削除時の関連データ（User, Todo, Tag 等）のカスケード削除は DB 制約に委ねる
+
+---
+
+## レートリミット
+
+`@nestjs/throttler` でリクエスト頻度を制限する。インメモリストアを使用。
+
+### 設定
+
+| 対象 | リクエスト上限 | 期間 |
+|------|-------------|------|
+| 全エンドポイント（グローバル） | 100 | 60 秒 |
+| `POST /auth/login` | 5 | 60 秒 |
+| `POST /auth/password-reset/request` | 3 | 60 秒 |
+| `POST /auth/password-reset/confirm` | 5 | 60 秒 |
+
+### 登録方法
+
+```typescript
+// app.module.ts — グローバル設定
+ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }])
+
+// APP_GUARD でグローバルガードとして登録
+providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }]
+
+// auth.controller.ts — エンドポイント単位の上書き
+@Throttle({ default: { ttl: 60000, limit: 5 } })
+@Post('login')
+async login() { ... }
+```
+
+### ルール
+
+- 429 レスポンスは `ProblemDetailsFilter` が自動的に RFC 9457 形式に変換する
+- IP ベースの制限（デフォルト動作）
+- 設定値はハードコード。環境変数化が必要な場合は `ThrottlerModule.forRootAsync` + `ConfigService` に変更する

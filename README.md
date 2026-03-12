@@ -1,6 +1,6 @@
 # NestJS Sample TODO API
 
-NestJS + Prisma + SQL Server で構築する TODO API のサンプルプロジェクト。
+NestJS + Prisma + SQL Server で構築するマルチテナント TODO API のサンプルプロジェクト。
 
 ## 前提条件
 
@@ -22,17 +22,27 @@ cp .env.example .env
 # 3. SQL Server の起動
 docker compose up -d
 
-# 4. DB にテーブルを作成
-yarn prisma db push
+# 4. マイグレーション実行
+yarn prisma migrate dev
 
-# 5. Prisma Client の生成
-yarn prisma generate
+# 5. シードデータ投入
+yarn prisma db seed
 
 # 6. 開発サーバーの起動
 yarn start:dev
 ```
 
 起動後 http://localhost:3000/api で Swagger UI を確認できる。
+
+### シードユーザー
+
+| ユーザー | メールアドレス | パスワード | ロール |
+| --- | --- | --- | --- |
+| システム管理者 | `admin@system.example.com` | `Admin123!` | `system_admin` |
+| テナントA 管理者 | `admin@tenant-a.example.com` | `Admin123!` | `tenant_admin` |
+| テナントA ユーザー | `user@tenant-a.example.com` | `User123!` | `tenant_user` |
+| テナントB 管理者 | `admin@tenant-b.example.com` | `Admin123!` | `tenant_admin` |
+| テナントB ユーザー | `user@tenant-b.example.com` | `User123!` | `tenant_user` |
 
 ## コマンド一覧
 
@@ -57,6 +67,60 @@ yarn start:dev
 | API ドキュメント | Swagger (nestjs/swagger) |
 | テスト | Jest |
 | エラーレスポンス | RFC 9457 (Problem Details) |
+| 認証 | JWT (Cookie ベース) |
+| 認可 | CASL (@casl/prisma) |
+| レートリミット | @nestjs/throttler |
+
+## 認証・認可
+
+### 認証方式
+
+JWT トークンを httpOnly Cookie で管理する。Bearer ヘッダは使用しない。
+
+- **Access Token** — `access_token` Cookie、有効期限 15 分
+- **Refresh Token** — `refresh_token` Cookie（path: `/auth`）、有効期限 7 日、DB に保存
+
+### 認証エンドポイント
+
+| メソッド | パス | 説明 | 認証 |
+| --- | --- | --- | --- |
+| `POST` | `/auth/login` | ログイン | 不要 |
+| `POST` | `/auth/logout` | ログアウト | 必要 |
+| `POST` | `/auth/refresh` | トークンリフレッシュ | 不要（Cookie） |
+| `GET` | `/auth/me` | 認証ユーザー情報取得 | 必要 |
+| `POST` | `/auth/password-reset/request` | パスワードリセット要求 | 不要 |
+| `POST` | `/auth/password-reset/confirm` | パスワードリセット実行 | 不要 |
+
+### ロールと権限
+
+3 つのロールで権限を制御する。
+
+| ロール | 説明 |
+| --- | --- |
+| `system_admin` | 全テナント・全リソースに対する全操作 |
+| `tenant_admin` | 自テナント内の全リソースに対する全操作 |
+| `tenant_user` | 自テナント内のリソースの読み取り・作成・更新（削除不可） |
+
+権限の詳細は [`docs/RULES.md`](docs/RULES.md) の「認証・認可」セクションを参照。
+
+### レートリミット
+
+| 対象 | リクエスト上限 | 期間 |
+| --- | --- | --- |
+| 全エンドポイント（デフォルト） | 100 | 60 秒 |
+| `POST /auth/login` | 5 | 60 秒 |
+| `POST /auth/password-reset/request` | 3 | 60 秒 |
+| `POST /auth/password-reset/confirm` | 5 | 60 秒 |
+
+## マルチテナント
+
+### データ分離方式
+
+共有 DB・共有スキーマ方式を採用する。各テーブルに `tenantId` カラムを持ち、CASL の条件付きルール (`{ tenantId: user.tenantId }`) でクエリレベルのフィルタリングを行う。
+
+### テナント作成
+
+`POST /tenants` でテナントを作成すると、同時にそのテナントの管理者ユーザーが 1 名作成される（アトミック操作）。
 
 ## ディレクトリ構成
 
@@ -65,17 +129,47 @@ src/
 ├── main.ts                      アプリケーションエントリポイント
 ├── app.module.ts                ルートモジュール
 │
-├── common/                      インフラ的な共通関心事
-│   ├── filters/                   例外フィルタ (Problem Details 形式)
-│   ├── pipes/                     バリデーションパイプ (Zod)
-│   └── schema/                    Zod スキーマヘルパー
+├── auth/                        認証・認可モジュール
+│   ├── auth.module.ts
+│   ├── auth.controller.ts
+│   ├── auth.usecase.ts
+│   ├── auth.validator.ts
+│   ├── auth.repository.ts
+│   ├── auth.entity.ts
+│   ├── decorators/                カスタムデコレータ
+│   │   ├── public.decorator.ts      @Public() — 認証不要マーク
+│   │   ├── current-user.decorator.ts @CurrentUser() — JWT ペイロード取得
+│   │   └── check-policy.decorator.ts @CheckPolicy() — CASL ポリシーチェック
+│   ├── external/                  他モジュールに公開するもの
+│   │   ├── jwt-auth.guard.ts        グローバル認証ガード
+│   │   ├── policies.guard.ts        認可ガード
+│   │   └── casl-ability.factory.ts   CASL アビリティ定義
+│   ├── types/                     型定義 (Role, JwtPayload)
+│   ├── dto/
+│   └── schema/
 │
-├── config/                      環境変数バリデーション
+├── tenant/                      テナント管理モジュール
+│   ├── tenant.module.ts
+│   ├── tenant.controller.ts
+│   ├── tenant.usecase.ts
+│   ├── tenant.validator.ts
+│   ├── tenant.repository.ts
+│   ├── tenant.model.ts
+│   ├── tenant.entity.ts
+│   ├── dto/
+│   └── schema/
 │
-├── prisma/                      Prisma 関連
-│   ├── prisma.service.ts          PrismaClient ラッパー
-│   ├── prisma.types.ts            TransactionClient 型定義
-│   └── transaction.service.ts     トランザクション実行サービス
+├── user/                        ユーザー管理モジュール
+│   ├── user.module.ts
+│   ├── user.controller.ts
+│   ├── user.usecase.ts
+│   ├── user.validator.ts
+│   ├── user.model.ts
+│   ├── user.entity.ts
+│   ├── external/
+│   │   └── user.repository.ts
+│   ├── dto/
+│   └── schema/
 │
 ├── todo/                        Todo ドメインモジュール
 │   ├── todo.module.ts
@@ -85,21 +179,33 @@ src/
 │   ├── todo.model.ts
 │   ├── todo.entity.ts
 │   ├── todo.repository.ts
-│   ├── dto/                       リクエスト / レスポンス DTO
-│   └── schema/                    Zod スキーマ定義 + テスト
+│   ├── dto/
+│   └── schema/
 │
-└── tag/                         Tag ドメインモジュール
-    ├── tag.module.ts
-    ├── tag.controller.ts
-    ├── tag.usecase.ts
-    ├── tag.validator.ts
-    ├── tag.model.ts
-    ├── tag.entity.ts
-    ├── external/                  他モジュールに公開するもの
-    │   ├── tag.repository.ts
-    │   └── tag-resolve.service.ts
-    ├── dto/
-    └── schema/
+├── tag/                         Tag ドメインモジュール
+│   ├── tag.module.ts
+│   ├── tag.controller.ts
+│   ├── tag.usecase.ts
+│   ├── tag.validator.ts
+│   ├── tag.model.ts
+│   ├── tag.entity.ts
+│   ├── external/
+│   │   ├── tag.repository.ts
+│   │   └── tag-resolve.service.ts
+│   ├── dto/
+│   └── schema/
+│
+├── common/                      インフラ的な共通関心事
+│   ├── filters/                   例外フィルタ (Problem Details 形式)
+│   ├── pipes/                     バリデーションパイプ (Zod)
+│   └── schema/                    Zod スキーマヘルパー
+│
+├── config/                      環境変数バリデーション
+│
+└── prisma/                      Prisma 関連
+    ├── prisma.service.ts          PrismaClient ラッパー
+    ├── prisma.types.ts            TransactionClient 型定義
+    └── transaction.service.ts     トランザクション実行サービス
 ```
 
 ## アーキテクチャ

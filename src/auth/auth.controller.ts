@@ -9,6 +9,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiBody, ApiResponse } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { AuthUsecase } from './auth.usecase';
@@ -42,6 +43,7 @@ export class AuthController {
 
   @Post('login')
   @Public()
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
   @ApiBody({ schema: createApiBodySchema(loginSchema) })
   @ApiResponse({
@@ -109,6 +111,7 @@ export class AuthController {
 
   @Post('password-reset/request')
   @Public()
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
   @HttpCode(HttpStatus.OK)
   @ApiBody({ schema: createApiBodySchema(passwordResetRequestSchema) })
   @ApiResponse({
@@ -126,6 +129,7 @@ export class AuthController {
 
   @Post('password-reset/confirm')
   @Public()
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
   @ApiBody({ schema: createApiBodySchema(passwordResetConfirmSchema) })
   @ApiResponse({ status: 200, description: 'パスワードリセット成功' })
