@@ -387,7 +387,6 @@ import {
   Post,
   Query,
   UseGuards,
-  UsePipes,
 } from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ${PASCAL}Usecase } from './${KEBAB}.usecase';
@@ -468,9 +467,8 @@ export class ${PASCAL}Controller {
   })
   @ApiResponse({ status: 400, description: 'バリデーションエラー' })
   @CheckPolicy((ability) => ability.can('create', '${PASCAL}'))
-  @UsePipes(new ZodValidationPipe(create${PASCAL}Schema))
   async create(
-    @Body() dto: Create${PASCAL}Input,
+    @Body(new ZodValidationPipe(create${PASCAL}Schema)) dto: Create${PASCAL}Input,
     @CurrentUser() user: JwtPayload,
   ): Promise<${PASCAL}ResponseDto> {
     if (user.tenantId === null) {
@@ -547,12 +545,86 @@ import { ${PASCAL}Validator } from './${KEBAB}.validator';
 export class ${PASCAL}Module {}
 EOF
 
-echo ""
 echo "✓ Generated ${DIR}/"
+
+# ============================================================
+# Prisma schema にモデルを追加
+# ============================================================
+SCHEMA_FILE="prisma/schema.prisma"
+
+# Tenant の @@map の前にリレーションを追加
+SNAKE_PLURAL="${PLURAL//-/_}"
+awk -v rel="  ${SNAKE_PLURAL}  ${PASCAL}[]" '
+  /^  @@map\("tenants"\)/ { print rel; print "" }
+  { print }
+' "$SCHEMA_FILE" > "${SCHEMA_FILE}.tmp" && mv "${SCHEMA_FILE}.tmp" "$SCHEMA_FILE"
+
+# schema 末尾にモデルを追加
+cat >> "$SCHEMA_FILE" << EOF
+
+model ${PASCAL} {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int      @map("tenant_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  // TODO: フィールドを追加
+
+  @@map("${PLURAL//-/_}")
+}
+EOF
+
+echo "✓ Prisma schema に ${PASCAL} モデルを追加"
+
+# ============================================================
+# CASL ability にサブジェクトを追加
+# ============================================================
+CASL_FILE="src/auth/external/casl-ability.factory.ts"
+
+# import に追加
+sed -i '' "s/import { \(.*\) } from '@prisma\/client';/import { \1, ${PASCAL} } from '@prisma\/client';/" "$CASL_FILE"
+
+# Subjects 型に追加
+sed -i '' "/      Tenant: Tenant;/a\\
+\\      ${PASCAL}: ${PASCAL};
+" "$CASL_FILE"
+
+# tenant_admin に manage ルールを追加
+sed -i '' "/can('manage', 'Tag', { tenantId: user.tenantId });/a\\
+\\          can('manage', '${PASCAL}', { tenantId: user.tenantId });
+" "$CASL_FILE"
+
+# tenant_user に read/create/update ルールを追加（macOS sed は複数行挿入が不安定なため個別に実行）
+sed -i '' "/can('read', 'Tag', { tenantId: user.tenantId });/a\\
+\\          can('read', '${PASCAL}', { tenantId: user.tenantId });
+" "$CASL_FILE"
+sed -i '' "/can('read', '${PASCAL}', { tenantId: user.tenantId });/a\\
+\\          can('create', '${PASCAL}', { tenantId: user.tenantId });
+" "$CASL_FILE"
+sed -i '' "/can('create', '${PASCAL}', { tenantId: user.tenantId });/a\\
+\\          can('update', '${PASCAL}', { tenantId: user.tenantId });
+" "$CASL_FILE"
+
+echo "✓ CASL ability に ${PASCAL} のルールを追加"
+
+# ============================================================
+# AppModule に登録
+# ============================================================
+APP_MODULE="src/app.module.ts"
+
+# import 文を追加（HealthModule の import の前に挿入）
+sed -i '' "/import { HealthModule } from '.\/health\/health.module';/i\\
+import { ${PASCAL}Module } from './${KEBAB}/${KEBAB}.module';
+" "$APP_MODULE"
+
+# imports 配列に追加（HealthModule の前に挿入）
+sed -i '' "s/    HealthModule,/    ${PASCAL}Module,\\
+    HealthModule,/" "$APP_MODULE"
+
+echo "✓ AppModule に ${PASCAL}Module を登録"
+
 echo ""
-echo "Next steps:"
-echo "  1. Prisma schema に ${PASCAL} モデルを追加"
-echo "  2. CASL ability に ${PASCAL} のルールを追加 (src/auth/external/casl-ability.factory.ts)"
-echo "  3. AppModule に ${PASCAL}Module を imports に追加 (src/app.module.ts)"
-echo "  4. 各ファイルの TODO コメントに従いドメイン固有のフィールドを追加"
-echo "  5. yarn prisma db push && yarn build で確認"
+echo "Remaining steps:"
+echo "  1. 各ファイルの TODO コメントに従いドメイン固有のフィールドを追加"
+echo "  2. yarn prisma db push && yarn build で確認"

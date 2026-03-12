@@ -1,12 +1,12 @@
 # NestJS Sample TODO API
 
-NestJS + Prisma + SQL Server で構築するマルチテナント TODO API のサンプルプロジェクト。
+NestJS + Prisma + MySQL で構築するマルチテナント API のサンプルプロジェクト。
 
 ## 前提条件
 
 - Node.js 22.2.0
 - Yarn 1.22.22
-- Docker (SQL Server 用)
+- Docker (MySQL 用)
 
 バージョン管理には [asdf](https://asdf-vm.com/) を使用 (`.tool-versions`)。
 
@@ -19,11 +19,11 @@ yarn install
 # 2. 環境変数の設定
 cp .env.example .env
 
-# 3. SQL Server の起動
+# 3. MySQL の起動
 docker compose up -d
 
-# 4. マイグレーション実行
-yarn prisma migrate dev
+# 4. DB スキーマ反映
+yarn prisma db push
 
 # 5. シードデータ投入
 yarn prisma db seed
@@ -32,20 +32,20 @@ yarn prisma db seed
 yarn start:dev
 ```
 
-起動後 http://localhost:3000/api で Swagger UI を確認できる。
+起動後 http://localhost:3002/api で Swagger UI を確認できる。
 
 ### DB の切り替え
 
-デフォルトは SQL Server。他の DB を使用する場合は以下の手順で切り替える。
+デフォルトは MySQL。他の DB を使用する場合は以下の手順で切り替える。
 
 ```bash
 # 1. Prisma スキーマを切り替え（prisma generate も自動実行される）
-yarn db:use postgresql  # sqlserver | postgresql | mysql | sqlite
+yarn db:use postgresql  # mysql | postgresql | sqlserver | sqlite
 
 # 2. .env の DATABASE_URL を対応する接続文字列に変更
 ```
 
-対応 DB: SQL Server / PostgreSQL / MySQL / SQLite
+対応 DB: MySQL / PostgreSQL / SQL Server / SQLite
 
 ### シードユーザー
 
@@ -66,9 +66,10 @@ yarn db:use postgresql  # sqlserver | postgresql | mysql | sqlite
 | `yarn lint` | ESLint 実行 |
 | `yarn test` | 単体テスト実行 |
 | `yarn test:e2e` | E2E テスト実行 |
-| `yarn db:use <provider>` | DB プロバイダ切り替え (sqlserver / postgresql / mysql / sqlite) |
+| `yarn db:use <provider>` | DB プロバイダ切り替え (mysql / postgresql / sqlserver / sqlite) |
+| `yarn scaffold <domain>` | 新規ドメインモジュールの雛形生成 |
 | `yarn prisma studio` | Prisma Studio (DB GUI) 起動 |
-| `make db` | SQL Server コンソールにログイン |
+| `make db` | DB コンソールにログイン |
 
 ## 技術スタック
 
@@ -76,7 +77,7 @@ yarn db:use postgresql  # sqlserver | postgresql | mysql | sqlite
 | --- | --- |
 | フレームワーク | NestJS 10 |
 | ORM | Prisma 5 |
-| DB | SQL Server 2019 |
+| DB | MySQL 8.0 |
 | バリデーション | Zod |
 | API ドキュメント | Swagger (nestjs/swagger) |
 | テスト | Jest |
@@ -147,6 +148,48 @@ pino (`nestjs-pino`) による JSON 構造化ログ。全リクエストに `X-R
 ### テナント作成
 
 `POST /tenants` でテナントを作成すると、同時にそのテナントの管理者ユーザーが 1 名作成される（アトミック操作）。
+
+## Scaffold — 新規ドメインモジュールの追加
+
+### 1. scaffold 実行
+
+```bash
+yarn scaffold <domain>
+```
+
+例: `yarn scaffold product`
+
+以下が自動生成・登録される:
+
+- `src/<domain>/` 配下に 11 ファイル (model, controller, usecase, repository, validator, dto, schema)
+- `prisma/schema.prisma` に Model 追加 + Tenant リレーション追加
+- `src/auth/external/casl-ability.factory.ts` に CASL ルール追加
+- `src/app.module.ts` に Module 登録
+
+### 2. カラムを追加する
+
+scaffold 直後はドメイン固有のカラムがない最小構成。各ファイルの TODO コメントに従って追加する。
+
+`product` ドメインに `name: string` を追加する例:
+
+| ファイル | 変更内容 |
+| --- | --- |
+| `prisma/schema.prisma` | `name String` を追加 |
+| `src/product/product.model.ts` | `readonly name: string` を追加、constructor にも追加 |
+| `src/product/dto/product-response.dto.ts` | `name: string` を追加 |
+| `src/product/schema/create-product.schema.ts` | `name: z.string().min(1).max(255)` を追加 |
+| `src/product/schema/update-product.schema.ts` | `name: z.string().min(1).max(255).optional()` を追加 |
+| `src/product/product.repository.ts` | `create`, `update`, `toModel` にフィールド追加 |
+| `src/product/product.usecase.ts` | `create` の引数に `name: input.name` を追加 |
+| `src/product/product.controller.ts` | `toResponse` に `name: model.name` を追加 |
+
+### 3. DB 反映 & ビルド確認
+
+```bash
+yarn prisma db push && yarn build
+```
+
+カラム追加不要（最小構成のまま）の場合は scaffold 後にこのコマンドだけで動作する。
 
 ## ディレクトリ構成
 

@@ -12,6 +12,7 @@ import { TagModule } from './tag/tag.module';
 import { TodoModule } from './todo/todo.module';
 import { TenantModule } from './tenant/tenant.module';
 import { UserModule } from './user/user.module';
+import { ProductModule } from './product/product.module';
 import { HealthModule } from './health/health.module';
 
 
@@ -43,6 +44,7 @@ import { HealthModule } from './health/health.module';
     TodoModule,
     TenantModule,
     UserModule,
+    ProductModule,
     HealthModule,
   ],
   providers: [

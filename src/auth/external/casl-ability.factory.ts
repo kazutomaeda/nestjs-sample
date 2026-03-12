@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AbilityBuilder, PureAbility } from '@casl/ability';
 import { createPrismaAbility, PrismaQuery, Subjects } from '@casl/prisma';
-import { Todo, Tag, User, Tenant } from '@prisma/client';
+import { Todo, Tag, User, Tenant, Product } from '@prisma/client';
 import { JwtPayload } from '../types';
 
 type AppSubjects =
@@ -10,6 +10,7 @@ type AppSubjects =
       Tag: Tag;
       User: User;
       Tenant: Tenant;
+      Product: Product;
     }>
   | 'all';
 
@@ -29,6 +30,7 @@ export class CaslAbilityFactory {
         if (user.tenantId !== null) {
           can('manage', 'Todo', { tenantId: user.tenantId });
           can('manage', 'Tag', { tenantId: user.tenantId });
+          can('manage', 'Product', { tenantId: user.tenantId });
           can('read', 'User', { tenantId: user.tenantId });
           can('manage', 'User', { tenantId: user.tenantId });
           can('read', 'Tenant', { id: user.tenantId });
@@ -42,6 +44,9 @@ export class CaslAbilityFactory {
           can('create', 'Todo', { tenantId: user.tenantId });
           can('update', 'Todo', { tenantId: user.tenantId });
           can('read', 'Tag', { tenantId: user.tenantId });
+          can('read', 'Product', { tenantId: user.tenantId });
+          can('create', 'Product', { tenantId: user.tenantId });
+          can('update', 'Product', { tenantId: user.tenantId });
           can('read', 'User', { id: user.sub });
           can('update', 'User', { id: user.sub });
         }

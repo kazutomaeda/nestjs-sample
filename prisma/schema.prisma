@@ -17,6 +17,8 @@ model Tenant {
   users     User[]
   todos     Todo[]
   tags      Tag[]
+  products  Product[]
+
   @@map("tenants")
 }
 
@@ -95,4 +97,17 @@ model TodoTag {
 
   @@id([todoId, tagId])
   @@map("todo_tags")
+}
+
+model Product {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int      @map("tenant_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  name      String
+
+  // TODO: フィールドを追加
+
+  @@map("products")
 }
