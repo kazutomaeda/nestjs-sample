@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { paginationSchema, sortOrderSchema } from '../../common/schema';
+import { sortOrderSchema } from '../../common/schema';
 
-export const listTodoSchema = paginationSchema.extend({
+export const exportTodoSchema = z.object({
   sortBy: z.enum(['createdAt', 'title']).default('createdAt').openapi({
     description: 'ソート対象フィールド (createdAt, title)',
     example: 'createdAt',
@@ -19,4 +19,4 @@ export const listTodoSchema = paginationSchema.extend({
     .openapi({ description: '完了フラグでフィルタ', example: 'true' }),
 });
 
-export type ListTodoInput = z.infer<typeof listTodoSchema>;
+export type ExportTodoInput = z.infer<typeof exportTodoSchema>;

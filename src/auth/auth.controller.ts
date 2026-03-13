@@ -119,7 +119,8 @@ export class AuthController {
       'パスワードリセットメール送信（ユーザーが存在しない場合も成功を返す）',
   })
   async requestPasswordReset(
-    @Body(new ZodValidationPipe(passwordResetRequestSchema)) input: PasswordResetRequestInput,
+    @Body(new ZodValidationPipe(passwordResetRequestSchema))
+    input: PasswordResetRequestInput,
   ): Promise<{ message: string }> {
     await this.authUsecase.requestPasswordReset(input);
     return { message: 'パスワードリセットメールを送信しました' };
@@ -133,7 +134,8 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'パスワードリセット成功' })
   @ApiResponse({ status: 400, description: 'トークンが無効または期限切れ' })
   async confirmPasswordReset(
-    @Body(new ZodValidationPipe(passwordResetConfirmSchema)) input: PasswordResetConfirmInput,
+    @Body(new ZodValidationPipe(passwordResetConfirmSchema))
+    input: PasswordResetConfirmInput,
   ): Promise<{ message: string }> {
     await this.authUsecase.confirmPasswordReset(input);
     return { message: 'パスワードをリセットしました' };

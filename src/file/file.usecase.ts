@@ -25,7 +25,12 @@ export class FileUsecase {
   }
 
   async upload(
-    file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
+    file: {
+      buffer: Buffer;
+      originalname: string;
+      mimetype: string;
+      size: number;
+    },
     input: UploadFileInput,
     tenantId: number,
   ): Promise<FileModel> {

@@ -17,7 +17,10 @@ export class S3StorageClient extends FileStorageClient {
 
   constructor(private readonly configService: ConfigService) {
     super();
-    this.bucket = this.configService.get<string>('MINIO_BUCKET', 'nestjs-sample');
+    this.bucket = this.configService.get<string>(
+      'MINIO_BUCKET',
+      'nestjs-sample',
+    );
     this.s3 = new S3Client({
       endpoint: this.configService.get<string>('MINIO_ENDPOINT'),
       region: 'us-east-1',

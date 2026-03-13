@@ -75,7 +75,9 @@ export class TenantController {
   })
   @ApiResponse({ status: 400, description: 'バリデーションエラー' })
   @CheckPolicy((ability) => ability.can('create', 'Tenant'))
-  async create(@Body(new ZodValidationPipe(createTenantSchema)) dto: CreateTenantInput): Promise<TenantResponseDto> {
+  async create(
+    @Body(new ZodValidationPipe(createTenantSchema)) dto: CreateTenantInput,
+  ): Promise<TenantResponseDto> {
     const tenant = await this.tenantUsecase.create(dto);
     return this.toResponse(tenant);
   }

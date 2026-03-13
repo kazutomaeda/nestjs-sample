@@ -16,7 +16,6 @@ import { FileModule } from './file/file.module';
 // HYGEN:MODULE-IMPORT
 import { HealthModule } from './health/health.module';
 
-
 @Module({
   imports: [
     ConfigModule.forRoot({

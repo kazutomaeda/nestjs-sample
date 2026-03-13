@@ -152,7 +152,12 @@ describe('FileUsecase', () => {
         key: '1/new-uuid.png',
       });
 
-      const result = await usecase.copy(1, { relatedTable: 'todos', relatedId: 2 }, 1, mockAbility);
+      const result = await usecase.copy(
+        1,
+        { relatedTable: 'todos', relatedId: 2 },
+        1,
+        mockAbility,
+      );
 
       expect(mockStorageClient.copy).toHaveBeenCalledWith(
         '1/test-uuid.png',

@@ -71,11 +71,19 @@ describe('TodoUsecase', () => {
       const mockResult = { items: [mockTodo], totalItems: 1 };
       (mockTodoRepository.findAll as jest.Mock).mockResolvedValue(mockResult);
 
-      const query = { page: 1, limit: 20, sortBy: 'createdAt' as const, sortOrder: 'desc' as const };
+      const query = {
+        page: 1,
+        limit: 20,
+        sortBy: 'createdAt' as const,
+        sortOrder: 'desc' as const,
+      };
       const result = await usecase.findAll(mockAbility, query);
 
       expect(result).toEqual(mockResult);
-      expect(mockTodoRepository.findAll).toHaveBeenCalledWith(mockAbility, query);
+      expect(mockTodoRepository.findAll).toHaveBeenCalledWith(
+        mockAbility,
+        query,
+      );
     });
   });
 

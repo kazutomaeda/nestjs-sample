@@ -8,13 +8,10 @@ export const paginationSchema = z.object({
     .positive()
     .default(1)
     .openapi({ description: 'ページ番号', example: 1 }),
-  limit: z.coerce
-    .number()
-    .int()
-    .min(0)
-    .max(100)
-    .default(20)
-    .openapi({ description: '1ページあたりの件数（0で全件取得）', example: 20 }),
+  limit: z.coerce.number().int().min(0).max(100).default(20).openapi({
+    description: '1ページあたりの件数（0で全件取得）',
+    example: 20,
+  }),
 });
 
 export type PaginationInput = z.infer<typeof paginationSchema>;

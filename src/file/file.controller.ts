@@ -17,7 +17,12 @@ import { FileUsecase } from './file.usecase';
 import { FileModel } from './file.model';
 import { FileResponseDto } from './dto/file-response.dto';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
-import { uploadFileSchema, UploadFileInput, copyFileSchema, CopyFileInput } from './schema';
+import {
+  uploadFileSchema,
+  UploadFileInput,
+  copyFileSchema,
+  CopyFileInput,
+} from './schema';
 import { createApiBodySchema } from '../common/schema';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CheckPolicy } from '../auth/decorators/check-policy.decorator';

@@ -9,9 +9,12 @@ import {
   Patch,
   Post,
   Query,
+  Res,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiProduces, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
 import { TodoUsecase } from './todo.usecase';
 import { TodoModel } from './todo.model';
 import { TodoResponseDto } from './dto/todo-response.dto';
@@ -23,7 +26,14 @@ import {
   UpdateTodoInput,
   listTodoSchema,
   ListTodoInput,
+  exportTodoSchema,
+  ExportTodoInput,
 } from './schema';
+import {
+  CsvExportService,
+  ExportColumn,
+} from '../common/services/csv-export.service';
+import { PdfExportService } from '../common/services/pdf-export.service';
 import { createApiBodySchema } from '../common/schema';
 import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -39,6 +49,8 @@ export class TodoController {
   constructor(
     private readonly todoUsecase: TodoUsecase,
     private readonly caslAbilityFactory: CaslAbilityFactory,
+    private readonly csvExportService: CsvExportService,
+    private readonly pdfExportService: PdfExportService,
   ) {}
 
   @Get()
@@ -52,7 +64,10 @@ export class TodoController {
     @CurrentUser() user: JwtPayload,
   ): Promise<PaginatedResponseDto<TodoResponseDto>> {
     const ability = this.caslAbilityFactory.createForUser(user);
-    const { items, totalItems } = await this.todoUsecase.findAll(ability, query);
+    const { items, totalItems } = await this.todoUsecase.findAll(
+      ability,
+      query,
+    );
     return {
       items: items.map((todo) => this.toResponse(todo)),
       meta: {
@@ -62,6 +77,48 @@ export class TodoController {
         totalPages: query.limit > 0 ? Math.ceil(totalItems / query.limit) : 1,
       },
     };
+  }
+
+  @Get('export/csv')
+  @ApiProduces('text/csv')
+  @ApiResponse({ status: 200, description: 'TODO一覧CSVエクスポート' })
+  @CheckPolicy((ability) => ability.can('read', 'Todo'))
+  async exportCsv(
+    @Query(new ZodValidationPipe(exportTodoSchema)) query: ExportTodoInput,
+    @CurrentUser() user: JwtPayload,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const ability = this.caslAbilityFactory.createForUser(user);
+    const todos = await this.todoUsecase.findAllForExport(ability, query);
+    const buffer = this.csvExportService.generate(this.exportColumns(), todos);
+    res.set({
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="todos.csv"',
+    });
+    return new StreamableFile(buffer);
+  }
+
+  @Get('export/pdf')
+  @ApiProduces('application/pdf')
+  @ApiResponse({ status: 200, description: 'TODO一覧PDFエクスポート' })
+  @CheckPolicy((ability) => ability.can('read', 'Todo'))
+  async exportPdf(
+    @Query(new ZodValidationPipe(exportTodoSchema)) query: ExportTodoInput,
+    @CurrentUser() user: JwtPayload,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const ability = this.caslAbilityFactory.createForUser(user);
+    const todos = await this.todoUsecase.findAllForExport(ability, query);
+    const buffer = await this.pdfExportService.generate(
+      'TODO List',
+      this.exportColumns(),
+      todos,
+    );
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename="todos.pdf"',
+    });
+    return new StreamableFile(buffer);
   }
 
   @Get(':id')
@@ -139,6 +196,23 @@ export class TodoController {
     const ability = this.caslAbilityFactory.createForUser(user);
     const todo = await this.todoUsecase.remove(id, ability);
     return this.toResponse(todo);
+  }
+
+  private exportColumns(): ExportColumn<TodoModel>[] {
+    return [
+      { header: 'ID', accessor: (t) => t.id },
+      { header: 'タイトル', accessor: (t) => t.title },
+      {
+        header: '完了',
+        accessor: (t) => (t.completed ? '完了' : '未完了'),
+      },
+      {
+        header: 'タグ',
+        accessor: (t) => (t.tags ?? []).map((tag) => tag.name).join(', '),
+      },
+      { header: '作成日時', accessor: (t) => t.createdAt },
+      { header: '更新日時', accessor: (t) => t.updatedAt },
+    ];
   }
 
   private toResponse(model: TodoModel): TodoResponseDto {

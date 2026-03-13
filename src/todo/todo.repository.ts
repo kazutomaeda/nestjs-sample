@@ -35,9 +35,7 @@ export class TodoRepository {
     const where: Prisma.TodoWhereInput = {
       AND: [
         accessibleBy(ability).Todo,
-        ...(query.title
-          ? [{ title: { contains: query.title } }]
-          : []),
+        ...(query.title ? [{ title: { contains: query.title } }] : []),
         ...(query.completed !== undefined
           ? [{ completed: query.completed }]
           : []),

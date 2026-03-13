@@ -4,7 +4,12 @@ import { TagResolveService } from '../tag/external/tag-resolve.service';
 import { TodoRepository } from './todo.repository';
 import { TodoModel } from './todo.model';
 import { TodoValidator } from './todo.validator';
-import { CreateTodoInput, UpdateTodoInput, ListTodoInput } from './schema';
+import {
+  CreateTodoInput,
+  UpdateTodoInput,
+  ListTodoInput,
+  ExportTodoInput,
+} from './schema';
 import { AppAbility } from '../auth/external/casl-ability.factory';
 import { FindAllQuery } from './todo.repository';
 
@@ -30,6 +35,22 @@ export class TodoUsecase {
       completed: input.completed,
     };
     return this.repository.findAll(ability, query);
+  }
+
+  async findAllForExport(
+    ability: AppAbility,
+    input: ExportTodoInput,
+  ): Promise<TodoModel[]> {
+    const query: FindAllQuery = {
+      page: 1,
+      limit: 0,
+      sortBy: input.sortBy,
+      sortOrder: input.sortOrder,
+      title: input.title,
+      completed: input.completed,
+    };
+    const { items } = await this.repository.findAll(ability, query);
+    return items;
   }
 
   async findOne(id: number, ability: AppAbility): Promise<TodoModel> {

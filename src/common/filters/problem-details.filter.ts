@@ -18,7 +18,10 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     if (!(exception instanceof HttpException)) {
-      this.logger.error('Unhandled exception', exception instanceof Error ? exception.stack : exception);
+      this.logger.error(
+        'Unhandled exception',
+        exception instanceof Error ? exception.stack : exception,
+      );
     }
 
     const status =
