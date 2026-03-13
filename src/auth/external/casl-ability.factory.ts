@@ -8,8 +8,6 @@ import {
   Tenant,
   File,
   AuditLog,
-  Order,
-
   // HYGEN:CASL-IMPORT
 } from '@prisma/client';
 import { JwtPayload } from '../types';
@@ -22,8 +20,6 @@ type AppSubjects =
       Tenant: Tenant;
       File: File;
       AuditLog: AuditLog;
-      Order: Order;
-
       // HYGEN:CASL-SUBJECT
     }>
   | 'all';
@@ -46,8 +42,6 @@ export class CaslAbilityFactory {
           can('manage', 'Tag', { tenantId: user.tenantId });
           can('manage', 'File', { tenantId: user.tenantId });
           can('read', 'AuditLog', { tenantId: user.tenantId });
-          can('manage', 'Order', { tenantId: user.tenantId });
-
           // HYGEN:CASL-ADMIN
           can('read', 'User', { tenantId: user.tenantId });
           can('manage', 'User', { tenantId: user.tenantId });
@@ -65,10 +59,6 @@ export class CaslAbilityFactory {
           can('read', 'File', { tenantId: user.tenantId });
           can('create', 'File', { tenantId: user.tenantId });
           can('update', 'File', { tenantId: user.tenantId });
-          can('read', 'Order', { tenantId: user.tenantId });
-          can('create', 'Order', { tenantId: user.tenantId });
-          can('update', 'Order', { tenantId: user.tenantId });
-
           // HYGEN:CASL-USER
           can('read', 'User', { id: user.sub });
           can('update', 'User', { id: user.sub });
