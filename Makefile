@@ -14,13 +14,13 @@ rebuild:
 db-up:
 	docker compose up -d mysql
 
-# DB スキーマ反映（Docker 内で実行）
+# DB スキーマ反映
 db-push: db-up
-	docker compose exec app yarn prisma db push
+	docker compose run --rm --no-deps -e DATABASE_URL="mysql://root:password@mysql:3306/nestjs_sample" app yarn prisma db push
 
-# シードデータ投入（Docker 内で実行）
+# シードデータ投入
 db-seed: db-up
-	docker compose exec app yarn prisma db seed
+	docker compose run --rm --no-deps -e DATABASE_URL="mysql://root:password@mysql:3306/nestjs_sample" app yarn prisma db seed
 
 # DB コンソールログイン（.env の DATABASE_URL から自動判定）
 db-login: db-up

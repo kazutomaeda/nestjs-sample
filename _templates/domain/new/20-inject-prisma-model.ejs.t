@@ -10,6 +10,7 @@ const camel = h.changeCase.camel(name)
 const snakePlural = h.inflection.pluralize(name).replace(/-/g, '_')
 const fields = h.parseFields(locals.fields)
 const hasFields = fields.length > 0
+const softDelete = !locals.hardDelete
 -%>
 
 model <%= pascal %> {
@@ -22,6 +23,9 @@ model <%= pascal %> {
 <% } -%>
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+<% if (softDelete) { -%>
+  deletedAt DateTime? @map("deleted_at")
+<% } -%>
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
 <% if (!hasFields) { -%>
 

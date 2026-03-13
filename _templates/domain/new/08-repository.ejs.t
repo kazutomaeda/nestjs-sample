@@ -6,6 +6,7 @@ const pascal = h.changeCase.pascal(name)
 const camel = h.changeCase.camel(name)
 const fields = h.parseFields(locals.fields)
 const hasFields = fields.length > 0
+const softDelete = !locals.hardDelete
 -%>
 import { Injectable } from '@nestjs/common';
 import { accessibleBy } from '@casl/prisma';
@@ -33,6 +34,9 @@ export class <%= pascal %>Repository {
     const where: Prisma.<%= pascal %>WhereInput = {
       AND: [
         accessibleBy(ability).<%= pascal %>,
+<% if (softDelete) { -%>
+        { deletedAt: null },
+<% } -%>
         // TODO: フィルタ条件を追加
       ],
     };
@@ -61,7 +65,12 @@ export class <%= pascal %>Repository {
     const entity = await this.prisma.<%= camel %>.findFirst({
       where: {
         id,
-        AND: [accessibleBy(ability).<%= pascal %>],
+        AND: [
+          accessibleBy(ability).<%= pascal %>,
+<% if (softDelete) { -%>
+          { deletedAt: null },
+<% } -%>
+        ],
       },
     });
     return entity ? this.toModel(entity) : null;
@@ -110,12 +119,22 @@ export class <%= pascal %>Repository {
     return this.toModel(entity);
   }
 
+<% if (softDelete) { -%>
+  async delete(id: number, tx: TransactionClient): Promise<<%= pascal %>Model> {
+    const entity = await tx.<%= camel %>.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+    return this.toModel(entity);
+  }
+<% } else { -%>
   async delete(id: number, tx: TransactionClient): Promise<<%= pascal %>Model> {
     const entity = await tx.<%= camel %>.delete({
       where: { id },
     });
     return this.toModel(entity);
   }
+<% } -%>
 
   private toModel(entity: Prisma.<%= pascal %>GetPayload<object>): <%= pascal %>Model {
     return new <%= pascal %>Model({
@@ -130,6 +149,9 @@ export class <%= pascal %>Repository {
 <% } -%>
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
+<% if (softDelete) { -%>
+      deletedAt: entity.deletedAt,
+<% } -%>
     });
   }
 }

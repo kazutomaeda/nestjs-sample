@@ -5,6 +5,7 @@ to: src/<%= name %>/<%= name %>.model.ts
 const pascal = h.changeCase.pascal(name)
 const fields = h.parseFields(locals.fields)
 const hasFields = fields.length > 0
+const softDelete = !locals.hardDelete
 -%>
 export class <%= pascal %>Model {
   readonly id: number;
@@ -14,6 +15,9 @@ export class <%= pascal %>Model {
 <% }) -%>
   readonly createdAt: Date;
   readonly updatedAt: Date;
+<% if (softDelete) { -%>
+  readonly deletedAt: Date | null;
+<% } -%>
 
   constructor(params: {
     id: number;
@@ -23,6 +27,9 @@ export class <%= pascal %>Model {
 <% }) -%>
     createdAt: Date;
     updatedAt: Date;
+<% if (softDelete) { -%>
+    deletedAt: Date | null;
+<% } -%>
   }) {
     this.id = params.id;
     this.tenantId = params.tenantId;
@@ -31,6 +38,9 @@ export class <%= pascal %>Model {
 <% }) -%>
     this.createdAt = params.createdAt;
     this.updatedAt = params.updatedAt;
+<% if (softDelete) { -%>
+    this.deletedAt = params.deletedAt;
+<% } -%>
   }
 
 <% if (hasFields) { -%>
@@ -56,6 +66,9 @@ export class <%= pascal %>Model {
 <% }) -%>
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
+<% if (softDelete) { -%>
+      deletedAt: this.deletedAt,
+<% } -%>
     });
   }
 <% } else { -%>
@@ -73,6 +86,9 @@ export class <%= pascal %>Model {
       tenantId: this.tenantId,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
+<% if (softDelete) { -%>
+      deletedAt: this.deletedAt,
+<% } -%>
     });
   }
 <% } -%>
