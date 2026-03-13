@@ -202,6 +202,113 @@ export class AzureBlobStorageClient extends FileStorageClient {
 { provide: FileStorageClient, useClass: AzureBlobStorageClient },
 ```
 
+## データエクスポート (CSV / PDF)
+
+一覧データを CSV・PDF ファイルとしてダウンロードする機能。Todo モジュールにサンプル実装済み。
+
+### エンドポイント（Todo の例）
+
+| メソッド | パス | 説明 |
+| --- | --- | --- |
+| `GET` | `/todos/export/csv` | TODO 一覧を CSV でダウンロード |
+| `GET` | `/todos/export/pdf` | TODO 一覧を PDF でダウンロード |
+
+既存のフィルタ・ソートクエリパラメータをそのまま使用できる（ページネーションは無視、全件出力）。
+
+### 他ドメインへの追加手順
+
+#### 1. Module に `CommonModule` を import
+
+```typescript
+import { CommonModule } from '../common/common.module';
+
+@Module({
+  imports: [AuthModule, CommonModule],
+  // ...
+})
+export class OrderModule {}
+```
+
+#### 2. Controller に `CsvExportService` / `PdfExportService` を注入
+
+```typescript
+import { CsvExportService, ExportColumn } from '../common/services/csv-export.service';
+import { PdfExportService } from '../common/services/pdf-export.service';
+
+@Controller('orders')
+export class OrderController {
+  constructor(
+    private readonly orderUsecase: OrderUsecase,
+    private readonly csvExportService: CsvExportService,
+    private readonly pdfExportService: PdfExportService,
+  ) {}
+}
+```
+
+#### 3. カラム定義を `accessor` 関数で記述
+
+`accessor` を使うことで、Model のフィールドだけでなく計算値・加工値も出力できる。
+
+```typescript
+private exportColumns(): ExportColumn<OrderModel>[] {
+  return [
+    { header: 'ID', accessor: (o) => o.id },
+    { header: '商品名', accessor: (o) => o.productName },
+    { header: '税込金額', accessor: (o) => Math.floor(o.amount * 1.1) },
+    { header: 'ステータス', accessor: (o) => o.paid ? '支払済' : '未払い' },
+  ];
+}
+```
+
+#### 4. エクスポートエンドポイントを追加
+
+```typescript
+@Get('export/csv')
+@ApiProduces('text/csv')
+@ApiResponse({ status: 200, description: 'CSV エクスポート' })
+async exportCsv(
+  @Query(new ZodValidationPipe(exportOrderSchema)) query: ExportOrderInput,
+  @CurrentUser() user: JwtPayload,
+  @Res({ passthrough: true }) res: Response,
+): Promise<StreamableFile> {
+  const ability = this.caslAbilityFactory.createForUser(user);
+  const orders = await this.orderUsecase.findAllForExport(ability, query);
+  const buffer = this.csvExportService.generate(this.exportColumns(), orders);
+  res.set({
+    'Content-Type': 'text/csv; charset=utf-8',
+    'Content-Disposition': 'attachment; filename="orders.csv"',
+  });
+  return new StreamableFile(buffer);
+}
+```
+
+PDF も同様に `pdfExportService.generate(title, columns, rows)` で Buffer を取得して返す。
+
+### PDF レイアウトのカスタマイズ
+
+PDF 生成には [pdfmake](https://pdfmake.github.io/docs/0.3/) を使用。JSON 宣言的にレイアウトを定義できる。
+
+カスタマイズする場合は `PdfExportService.generate()` 内の `docDefinition` を変更する。pdfmake のドキュメント定義（テーブル、カラム幅、スタイル、ヘッダ・フッタ等）はすべて `TDocumentDefinitions` 型で表現される。
+
+```typescript
+const docDefinition: TDocumentDefinitions = {
+  content: [
+    { text: title, style: 'title' },
+    {
+      table: {
+        headerRows: 1,
+        widths: [50, '*', 80, 100],  // カラム幅を個別指定
+        body: [headerRow, ...bodyRows],
+      },
+      layout: 'lightHorizontalLines',  // テーブルレイアウト
+    },
+  ],
+  pageSize: 'A4',
+  pageOrientation: 'landscape',
+  styles: { title: { fontSize: 16, bold: true } },
+};
+```
+
 ## マルチテナント
 
 ### データ分離方式
