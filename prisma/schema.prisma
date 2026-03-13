@@ -18,6 +18,9 @@ model Tenant {
   todos     Todo[]
   tags      Tag[]
   products  Product[]
+  orders  Order[]
+
+  // HYGEN:TENANT-RELATION
 
   @@map("tenants")
 }
@@ -111,3 +114,19 @@ model Product {
 
   @@map("products")
 }
+
+
+model Order {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int      @map("tenant_id")
+  title     String
+  amount    Int
+  paid      Boolean   @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@map("orders")
+}
+
+// HYGEN:NEW-MODEL

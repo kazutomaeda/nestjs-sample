@@ -1,7 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { AbilityBuilder, PureAbility } from '@casl/ability';
 import { createPrismaAbility, PrismaQuery, Subjects } from '@casl/prisma';
-import { Todo, Tag, User, Tenant, Product } from '@prisma/client';
+import {
+  Todo,
+  Tag,
+  User,
+  Tenant,
+  Product,
+  Order,
+
+  // HYGEN:CASL-IMPORT
+} from '@prisma/client';
 import { JwtPayload } from '../types';
 
 type AppSubjects =
@@ -11,6 +20,9 @@ type AppSubjects =
       User: User;
       Tenant: Tenant;
       Product: Product;
+      Order: Order;
+
+      // HYGEN:CASL-SUBJECT
     }>
   | 'all';
 
@@ -31,6 +43,9 @@ export class CaslAbilityFactory {
           can('manage', 'Todo', { tenantId: user.tenantId });
           can('manage', 'Tag', { tenantId: user.tenantId });
           can('manage', 'Product', { tenantId: user.tenantId });
+          can('manage', 'Order', { tenantId: user.tenantId });
+
+          // HYGEN:CASL-ADMIN
           can('read', 'User', { tenantId: user.tenantId });
           can('manage', 'User', { tenantId: user.tenantId });
           can('read', 'Tenant', { id: user.tenantId });
@@ -47,6 +62,11 @@ export class CaslAbilityFactory {
           can('read', 'Product', { tenantId: user.tenantId });
           can('create', 'Product', { tenantId: user.tenantId });
           can('update', 'Product', { tenantId: user.tenantId });
+          can('read', 'Order', { tenantId: user.tenantId });
+          can('create', 'Order', { tenantId: user.tenantId });
+          can('update', 'Order', { tenantId: user.tenantId });
+
+          // HYGEN:CASL-USER
           can('read', 'User', { id: user.sub });
           can('update', 'User', { id: user.sub });
         }

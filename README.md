@@ -151,7 +151,9 @@ pino (`nestjs-pino`) による JSON 構造化ログ。全リクエストに `X-R
 
 ## Scaffold — 新規ドメインモジュールの追加
 
-### 1. scaffold 実行
+[Hygen](https://www.hygen.io/) ベースのコードジェネレータ。テンプレートは `_templates/domain/new/` に配置。
+
+### 基本（カラム指定なし）
 
 ```bash
 yarn scaffold <domain>
@@ -159,37 +161,32 @@ yarn scaffold <domain>
 
 例: `yarn scaffold product`
 
-以下が自動生成・登録される:
+最小構成で生成される。各ファイルの TODO コメントに従ってフィールドを追加する。
+
+### カラム指定あり
+
+```bash
+yarn scaffold <domain> --fields "<name>:<type>,..."
+```
+
+例: `yarn scaffold order --fields "title:string,amount:number,paid:boolean"`
+
+対応する型: `string`, `number`, `boolean`
+
+カラム指定時は全ファイルにフィールドが埋め込まれるため、TODO の手動編集が不要。
+
+### 自動生成・登録される内容
 
 - `src/<domain>/` 配下に 11 ファイル (model, controller, usecase, repository, validator, dto, schema)
 - `prisma/schema.prisma` に Model 追加 + Tenant リレーション追加
 - `src/auth/external/casl-ability.factory.ts` に CASL ルール追加
 - `src/app.module.ts` に Module 登録
 
-### 2. カラムを追加する
-
-scaffold 直後はドメイン固有のカラムがない最小構成。各ファイルの TODO コメントに従って追加する。
-
-`product` ドメインに `name: string` を追加する例:
-
-| ファイル | 変更内容 |
-| --- | --- |
-| `prisma/schema.prisma` | `name String` を追加 |
-| `src/product/product.model.ts` | `readonly name: string` を追加、constructor にも追加 |
-| `src/product/dto/product-response.dto.ts` | `name: string` を追加 |
-| `src/product/schema/create-product.schema.ts` | `name: z.string().min(1).max(255)` を追加 |
-| `src/product/schema/update-product.schema.ts` | `name: z.string().min(1).max(255).optional()` を追加 |
-| `src/product/product.repository.ts` | `create`, `update`, `toModel` にフィールド追加 |
-| `src/product/product.usecase.ts` | `create` の引数に `name: input.name` を追加 |
-| `src/product/product.controller.ts` | `toResponse` に `name: model.name` を追加 |
-
-### 3. DB 反映 & ビルド確認
+### DB 反映 & ビルド確認
 
 ```bash
 yarn prisma db push && yarn build
 ```
-
-カラム追加不要（最小構成のまま）の場合は scaffold 後にこのコマンドだけで動作する。
 
 ## ディレクトリ構成
 
