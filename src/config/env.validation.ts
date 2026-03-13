@@ -26,6 +26,30 @@ class EnvironmentVariables {
   @IsString()
   @IsOptional()
   CORS_ORIGIN?: string;
+
+  @IsString()
+  @IsOptional()
+  MINIO_ENDPOINT?: string;
+
+  @IsString()
+  @IsOptional()
+  MINIO_ACCESS_KEY?: string;
+
+  @IsString()
+  @IsOptional()
+  MINIO_SECRET_KEY?: string;
+
+  @IsString()
+  @IsOptional()
+  MINIO_BUCKET?: string;
+
+  @IsString()
+  @IsOptional()
+  SMTP_HOST?: string;
+
+  @IsNumber()
+  @IsOptional()
+  SMTP_PORT?: number;
 }
 
 export function validate(config: Record<string, unknown>) {

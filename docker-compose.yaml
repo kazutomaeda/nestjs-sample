@@ -48,6 +48,18 @@ services:
     command: server /data --console-address ":9001"
     restart: unless-stopped
 
+  minio-init:
+    image: minio/mc
+    container_name: nestjs-sample-minio-init
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: >
+      sh -c "
+        until mc alias set local http://minio:9000 minioadmin minioadmin; do sleep 1; done;
+        mc mb --ignore-existing local/nestjs-sample;
+      "
+
   mailpit:
     image: axllent/mailpit
     container_name: nestjs-sample-mailpit

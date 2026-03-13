@@ -17,6 +17,7 @@ model Tenant {
   users     User[]
   todos     Todo[]
   tags      Tag[]
+  files  File[]
   // HYGEN:TENANT-RELATION
 
   @@map("tenants")
@@ -97,6 +98,22 @@ model TodoTag {
 
   @@id([todoId, tagId])
   @@map("todo_tags")
+}
+
+model File {
+  id           Int      @id @default(autoincrement())
+  tenantId     Int      @map("tenant_id")
+  key          String   @unique
+  originalName String   @map("original_name")
+  mimeType     String   @map("mime_type")
+  size         Int
+  relatedTable String?  @map("related_table")
+  relatedId    Int?     @map("related_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@map("files")
 }
 
 // HYGEN:NEW-MODEL
