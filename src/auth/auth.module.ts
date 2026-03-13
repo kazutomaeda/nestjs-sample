@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { MailModule } from '../mail/mail.module';
 import { AuthController } from './auth.controller';
 import { AuthUsecase } from './auth.usecase';
 import { AuthValidator } from './auth.validator';
@@ -11,6 +12,7 @@ import { PoliciesGuard } from './external/policies.guard';
 
 @Module({
   imports: [
+    MailModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({

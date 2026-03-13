@@ -8,6 +8,7 @@ import { AuthRepository } from './auth.repository';
 import { AuthValidator } from './auth.validator';
 import { UserModel } from '../user/user.model';
 import { JwtPayload } from './types';
+import { MailService } from '../mail/external/mail.service';
 import {
   LoginInput,
   PasswordResetRequestInput,
@@ -30,6 +31,7 @@ export class AuthUsecase {
     private readonly validator: AuthValidator,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly mailService: MailService,
   ) {
     this.accessTokenExpiresIn =
       this.configService.get<number>('JWT_ACCESS_TOKEN_EXPIRES_IN') ?? 900; // 15分
@@ -124,8 +126,18 @@ export class AuthUsecase {
       );
     });
 
-    // TODO: メール送信処理
-    // await this.mailService.sendPasswordResetEmail(user.email, token);
+    await this.mailService.send({
+      to: user.email,
+      subject: 'パスワードリセットのご案内',
+      text: [
+        'パスワードリセットが要求されました。',
+        '',
+        `リセットトークン: ${token}`,
+        '',
+        'このトークンは1時間有効です。',
+        '心当たりがない場合はこのメールを無視してください。',
+      ].join('\n'),
+    });
   }
 
   async confirmPasswordReset(input: PasswordResetConfirmInput): Promise<void> {

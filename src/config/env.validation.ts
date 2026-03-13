@@ -50,6 +50,18 @@ class EnvironmentVariables {
   @IsNumber()
   @IsOptional()
   SMTP_PORT?: number;
+
+  @IsString()
+  @IsOptional()
+  SMTP_FROM?: string;
+
+  @IsString()
+  @IsOptional()
+  SMTP_USER?: string;
+
+  @IsString()
+  @IsOptional()
+  SMTP_PASS?: string;
 }
 
 export function validate(config: Record<string, unknown>) {

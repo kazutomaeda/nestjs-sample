@@ -238,7 +238,7 @@ Validator / Service     Repository
 - 具体クラスを直接注入する（NestJS の標準パターン）
 - インタフェース + Symbol トークンによる抽象化は原則やらない
 - Symbol トークンを使うのは、環境ごとに実装を切り替える場合のみ（例: S3 / Minio）
-- **1 クラスのコンストラクタ依存は最大4個**。超えたら責務の分割を検討する
+- **1 クラスのコンストラクタ依存は目安4個**。超える場合は責務の切り出しを検討する（仕方のない場合もある）
 - **外部 SDK / API は専用の Client クラスでラップする**。Usecase が SDK を直接扱わない
 
 ```typescript
@@ -365,7 +365,7 @@ export class TodoController {
 
 ### 注入できるもの
 
-- TransactionService, Repository, Validator, Service, Client — **最大4個まで**
+- TransactionService, Repository, Validator, Service, Client — **目安4個**（超える場合は切り出しを検討）
 
 ### Module での扱い
 
