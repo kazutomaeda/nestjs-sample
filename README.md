@@ -6,11 +6,29 @@ NestJS + Prisma + MySQL で構築するマルチテナント API のサンプル
 
 - Node.js 22.2.0
 - Yarn 1.22.22
-- Docker (MySQL 用)
+- Docker / Docker Compose
 
 バージョン管理には [asdf](https://asdf-vm.com/) を使用 (`.tool-versions`)。
 
 ## 環境構築
+
+### Docker Compose で起動（推奨）
+
+```bash
+# 1. 環境変数の設定
+cp .env.example .env
+
+# 2. 全サービス起動（app, MySQL, MinIO, Mailpit）
+docker compose up -d
+
+# 3. DB スキーマ反映
+docker compose exec app yarn prisma db push
+
+# 4. シードデータ投入
+docker compose exec app yarn prisma db seed
+```
+
+### ホスト直接起動
 
 ```bash
 # 1. 依存パッケージのインストール
@@ -19,8 +37,8 @@ yarn install
 # 2. 環境変数の設定
 cp .env.example .env
 
-# 3. MySQL の起動
-docker compose up -d
+# 3. MySQL・MinIO・Mailpit の起動
+docker compose up -d mysql minio mailpit
 
 # 4. DB スキーマ反映
 yarn prisma db push
@@ -32,7 +50,13 @@ yarn prisma db seed
 yarn start:dev
 ```
 
-起動後 http://localhost:3002/api で Swagger UI を確認できる。
+### アクセス先
+
+| サービス | URL |
+| --- | --- |
+| Swagger UI | http://localhost:3002/api |
+| MinIO Console | http://localhost:9003 (minioadmin / minioadmin) |
+| Mailpit Web UI | http://localhost:8025 |
 
 ### DB の切り替え
 
