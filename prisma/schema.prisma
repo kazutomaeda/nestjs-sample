@@ -17,7 +17,10 @@ model Tenant {
   users     User[]
   todos     Todo[]
   tags      Tag[]
-  files  File[]
+  files     File[]
+  auditLogs AuditLog[]
+  orders  Order[]
+
   // HYGEN:TENANT-RELATION
 
   @@map("tenants")
@@ -35,6 +38,7 @@ model User {
   tenant         Tenant?         @relation(fields: [tenantId], references: [id])
   refreshTokens  RefreshToken[]
   passwordResets PasswordReset[]
+  auditLogs      AuditLog[]
 
   @@map("users")
 }
@@ -114,6 +118,36 @@ model File {
   tenant       Tenant   @relation(fields: [tenantId], references: [id])
 
   @@map("files")
+}
+
+model AuditLog {
+  id           Int      @id @default(autoincrement())
+  tenantId     Int      @map("tenant_id")
+  userId       Int      @map("user_id")
+  action       String   // 'create' | 'update' | 'delete'
+  resourceType String   @map("resource_type") // 'Todo', 'Tag', etc.
+  resourceId   Int      @map("resource_id")
+  before       Json?
+  after        Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+
+model Order {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int      @map("tenant_id")
+  title     String
+  amount    Int
+  paid      Boolean   @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@map("orders")
 }
 
 // HYGEN:NEW-MODEL

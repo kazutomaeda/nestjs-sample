@@ -107,7 +107,7 @@ export class <%= pascal %>Controller {
     if (user.tenantId === null) {
       throw new ForbiddenException('テナントに所属していません');
     }
-    const <%= camel %> = await this.<%= camel %>Usecase.create(dto, user.tenantId);
+    const <%= camel %> = await this.<%= camel %>Usecase.create(dto, user.tenantId, user.sub);
     return this.toResponse(<%= camel %>);
   }
 
@@ -125,8 +125,11 @@ export class <%= pascal %>Controller {
     @Body(new ZodValidationPipe(update<%= pascal %>Schema)) dto: Update<%= pascal %>Input,
     @CurrentUser() user: JwtPayload,
   ): Promise<<%= pascal %>ResponseDto> {
+    if (user.tenantId === null) {
+      throw new ForbiddenException('テナントに所属していません');
+    }
     const ability = this.caslAbilityFactory.createForUser(user);
-    const <%= camel %> = await this.<%= camel %>Usecase.update(id, dto, ability);
+    const <%= camel %> = await this.<%= camel %>Usecase.update(id, dto, user.tenantId, user.sub, ability);
     return this.toResponse(<%= camel %>);
   }
 
@@ -143,7 +146,7 @@ export class <%= pascal %>Controller {
     @CurrentUser() user: JwtPayload,
   ): Promise<<%= pascal %>ResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
-    const <%= camel %> = await this.<%= camel %>Usecase.remove(id, ability);
+    const <%= camel %> = await this.<%= camel %>Usecase.remove(id, user.sub, ability);
     return this.toResponse(<%= camel %>);
   }
 

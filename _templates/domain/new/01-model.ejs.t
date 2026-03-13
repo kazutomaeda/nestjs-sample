@@ -34,6 +34,15 @@ export class <%= pascal %>Model {
   }
 
 <% if (hasFields) { -%>
+  toAuditSnapshot(): Record<string, unknown> {
+    return {
+      id: this.id,
+<% fields.forEach(f => { -%>
+      <%= f.name %>: this.<%= f.name %>,
+<% }) -%>
+    };
+  }
+
   withUpdate(params: {
 <% fields.forEach(f => { -%>
     <%= f.name %>?: <%= h.tsType(f.type) %>;
@@ -50,6 +59,13 @@ export class <%= pascal %>Model {
     });
   }
 <% } else { -%>
+  // TODO: ドメインに合わせてフィールドを追加
+  toAuditSnapshot(): Record<string, unknown> {
+    return {
+      id: this.id,
+    };
+  }
+
   // TODO: ドメインに合わせてフィールドと withUpdate を追加
   withUpdate(): <%= pascal %>Model {
     return new <%= pascal %>Model({

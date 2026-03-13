@@ -154,8 +154,7 @@ export class TodoController {
     if (user.tenantId === null) {
       throw new ForbiddenException('テナントに所属していません');
     }
-    const ability = this.caslAbilityFactory.createForUser(user);
-    const todo = await this.todoUsecase.create(dto, user.tenantId, ability);
+    const todo = await this.todoUsecase.create(dto, user.tenantId, user.sub);
     return this.toResponse(todo);
   }
 
@@ -177,7 +176,13 @@ export class TodoController {
       throw new ForbiddenException('テナントに所属していません');
     }
     const ability = this.caslAbilityFactory.createForUser(user);
-    const todo = await this.todoUsecase.update(id, dto, user.tenantId, ability);
+    const todo = await this.todoUsecase.update(
+      id,
+      dto,
+      user.tenantId,
+      user.sub,
+      ability,
+    );
     return this.toResponse(todo);
   }
 
@@ -194,7 +199,7 @@ export class TodoController {
     @CurrentUser() user: JwtPayload,
   ): Promise<TodoResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
-    const todo = await this.todoUsecase.remove(id, ability);
+    const todo = await this.todoUsecase.remove(id, user.sub, ability);
     return this.toResponse(todo);
   }
 

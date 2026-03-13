@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { TransactionService } from '../prisma/transaction.service';
 import { TagResolveService } from '../tag/external/tag-resolve.service';
+import { AuditLogRepository } from '../audit-log/external/audit-log.repository';
 import { TodoRepository } from './todo.repository';
 import { TodoModel } from './todo.model';
 import { TodoUsecase } from './todo.usecase';
@@ -38,6 +39,10 @@ const mockTagResolveService: Pick<TagResolveService, 'resolveTagIds'> = {
   resolveTagIds: jest.fn(),
 };
 
+const mockAuditLogRepository: Pick<AuditLogRepository, 'create'> = {
+  create: jest.fn().mockResolvedValue(undefined),
+};
+
 const mockTransactionService: Pick<TransactionService, 'run'> = {
   run: jest.fn(<T>(fn: (tx: unknown) => Promise<T>) => fn({} as never)),
 };
@@ -52,6 +57,7 @@ describe('TodoUsecase', () => {
         TodoValidator,
         { provide: TodoRepository, useValue: mockTodoRepository },
         { provide: TagResolveService, useValue: mockTagResolveService },
+        { provide: AuditLogRepository, useValue: mockAuditLogRepository },
         { provide: TransactionService, useValue: mockTransactionService },
       ],
     }).compile();
@@ -108,11 +114,7 @@ describe('TodoUsecase', () => {
     it('トランザクション内でTODOを作成して返す', async () => {
       (mockTodoRepository.create as jest.Mock).mockResolvedValue(mockTodo);
 
-      const result = await usecase.create(
-        { title: 'テストTODO' },
-        1,
-        mockAbility,
-      );
+      const result = await usecase.create({ title: 'テストTODO' }, 1, 1);
 
       expect(result).toEqual(mockTodo);
       expect(mockTransactionService.run).toHaveBeenCalled();
@@ -134,7 +136,7 @@ describe('TodoUsecase', () => {
           tags: ['既存タグ', '新規タグ'],
         },
         1,
-        mockAbility,
+        1,
       );
 
       expect(mockTagResolveService.resolveTagIds).toHaveBeenCalledWith(
@@ -167,6 +169,7 @@ describe('TodoUsecase', () => {
         1,
         { completed: true },
         1,
+        1,
         mockAbility,
       );
 
@@ -187,7 +190,7 @@ describe('TodoUsecase', () => {
       (mockTodoRepository.update as jest.Mock).mockResolvedValue(mockTodo);
       (mockTagResolveService.resolveTagIds as jest.Mock).mockResolvedValue([1]);
 
-      await usecase.update(1, { tags: ['既存タグ'] }, 1, mockAbility);
+      await usecase.update(1, { tags: ['既存タグ'] }, 1, 1, mockAbility);
 
       expect(mockTagResolveService.resolveTagIds).toHaveBeenCalledWith(
         ['既存タグ'],
@@ -208,7 +211,7 @@ describe('TodoUsecase', () => {
       (mockTodoRepository.findById as jest.Mock).mockResolvedValue(mockTodo);
       (mockTodoRepository.delete as jest.Mock).mockResolvedValue(mockTodo);
 
-      const result = await usecase.remove(1, mockAbility);
+      const result = await usecase.remove(1, 1, mockAbility);
 
       expect(result).toEqual(mockTodo);
       expect(mockTodoRepository.findById).toHaveBeenCalledWith(1, mockAbility);

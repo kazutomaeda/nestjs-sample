@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionService } from '../prisma/transaction.service';
 import { TagResolveService } from '../tag/external/tag-resolve.service';
+import { AuditLogRepository } from '../audit-log/external/audit-log.repository';
 import { TodoRepository } from './todo.repository';
 import { TodoModel } from './todo.model';
 import { TodoValidator } from './todo.validator';
@@ -20,6 +21,7 @@ export class TodoUsecase {
     private readonly repository: TodoRepository,
     private readonly validator: TodoValidator,
     private readonly tagResolveService: TagResolveService,
+    private readonly auditLogRepository: AuditLogRepository,
   ) {}
 
   async findAll(
@@ -63,16 +65,29 @@ export class TodoUsecase {
   async create(
     input: CreateTodoInput,
     tenantId: number,
-    ability: AppAbility,
+    userId: number,
   ): Promise<TodoModel> {
     return this.transaction.run(async (tx) => {
       const tagIds = input.tags
         ? await this.tagResolveService.resolveTagIds(input.tags, tenantId, tx)
         : undefined;
-      return this.repository.create(
+      const todo = await this.repository.create(
         { tenantId, title: input.title, tagIds },
         tx,
       );
+      await this.auditLogRepository.create(
+        {
+          tenantId,
+          userId,
+          action: 'create',
+          resourceType: 'Todo',
+          resourceId: todo.id,
+          before: null,
+          after: todo.toAuditSnapshot(),
+        },
+        tx,
+      );
+      return todo;
     });
   }
 
@@ -80,6 +95,7 @@ export class TodoUsecase {
     id: number,
     input: UpdateTodoInput,
     tenantId: number,
+    userId: number,
     ability: AppAbility,
   ): Promise<TodoModel> {
     const todo = this.validator.ensureExists(
@@ -93,17 +109,47 @@ export class TodoUsecase {
       const tagIds = input.tags
         ? await this.tagResolveService.resolveTagIds(input.tags, tenantId, tx)
         : undefined;
-      return this.repository.update(id, updated, tagIds, tx);
+      const result = await this.repository.update(id, updated, tagIds, tx);
+      await this.auditLogRepository.create(
+        {
+          tenantId,
+          userId,
+          action: 'update',
+          resourceType: 'Todo',
+          resourceId: id,
+          before: todo.toAuditSnapshot(),
+          after: result.toAuditSnapshot(),
+        },
+        tx,
+      );
+      return result;
     });
   }
 
-  async remove(id: number, ability: AppAbility): Promise<TodoModel> {
-    this.validator.ensureExists(
+  async remove(
+    id: number,
+    userId: number,
+    ability: AppAbility,
+  ): Promise<TodoModel> {
+    const todo = this.validator.ensureExists(
       await this.repository.findById(id, ability),
       id,
     );
-    return this.transaction.run((tx) => {
-      return this.repository.delete(id, tx);
+    return this.transaction.run(async (tx) => {
+      const result = await this.repository.delete(id, tx);
+      await this.auditLogRepository.create(
+        {
+          tenantId: todo.tenantId,
+          userId,
+          action: 'delete',
+          resourceType: 'Todo',
+          resourceId: id,
+          before: todo.toAuditSnapshot(),
+          after: null,
+        },
+        tx,
+      );
+      return result;
     });
   }
 }

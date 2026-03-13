@@ -17,6 +17,7 @@ model Tenant {
   users     User[]
   todos     Todo[]
   tags      Tag[]
+  auditLogs AuditLog[]
 
   @@map("Tenants")
 }
@@ -33,6 +34,7 @@ model User {
   tenant         Tenant?         @relation(fields: [tenantId], references: [id])
   refreshTokens  RefreshToken[]
   passwordResets PasswordReset[]
+  auditLogs      AuditLog[]
 
   @@map("Users")
 }
@@ -96,4 +98,20 @@ model TodoTag {
 
   @@id([todoId, tagId])
   @@map("TodoTags")
+}
+
+model AuditLog {
+  id           Int      @id @default(autoincrement())
+  tenantId     Int      @map("tenant_id")
+  userId       Int      @map("user_id")
+  action       String   // 'create' | 'update' | 'delete'
+  resourceType String   @map("resource_type") // 'Todo', 'Tag', etc.
+  resourceId   Int      @map("resource_id")
+  before       Json?
+  after        Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@map("AuditLogs")
 }

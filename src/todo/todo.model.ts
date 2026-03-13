@@ -27,6 +27,15 @@ export class TodoModel {
     this.tags = params.tags;
   }
 
+  toAuditSnapshot(): Record<string, unknown> {
+    return {
+      id: this.id,
+      title: this.title,
+      completed: this.completed,
+      tags: (this.tags ?? []).map((tag) => tag.name),
+    };
+  }
+
   withUpdate(title?: string, completed?: boolean): TodoModel {
     return new TodoModel({
       id: this.id,

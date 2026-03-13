@@ -13,6 +13,9 @@ import { TodoModule } from './todo/todo.module';
 import { TenantModule } from './tenant/tenant.module';
 import { UserModule } from './user/user.module';
 import { FileModule } from './file/file.module';
+import { AuditLogModule } from './audit-log/audit-log.module';
+import { OrderModule } from './order/order.module';
+
 // HYGEN:MODULE-IMPORT
 import { HealthModule } from './health/health.module';
 
@@ -45,6 +48,9 @@ import { HealthModule } from './health/health.module';
     TenantModule,
     UserModule,
     FileModule,
+    AuditLogModule,
+    OrderModule,
+
     // HYGEN:MODULE-REGISTER
     HealthModule,
   ],

@@ -9,6 +9,7 @@ const hasFields = fields.length > 0
 -%>
 import { Injectable } from '@nestjs/common';
 import { TransactionService } from '../prisma/transaction.service';
+import { AuditLogRepository } from '../audit-log/external/audit-log.repository';
 import { <%= pascal %>Repository, FindAllQuery } from './<%= name %>.repository';
 import { <%= pascal %>Model } from './<%= name %>.model';
 import { <%= pascal %>Validator } from './<%= name %>.validator';
@@ -21,6 +22,7 @@ export class <%= pascal %>Usecase {
     private readonly transaction: TransactionService,
     private readonly repository: <%= pascal %>Repository,
     private readonly validator: <%= pascal %>Validator,
+    private readonly auditLogRepository: AuditLogRepository,
   ) {}
 
   async findAll(
@@ -47,9 +49,10 @@ export class <%= pascal %>Usecase {
   async create(
     input: Create<%= pascal %>Input,
     tenantId: number,
+    userId: number,
   ): Promise<<%= pascal %>Model> {
     return this.transaction.run(async (tx) => {
-      return this.repository.create(
+      const <%= camel %> = await this.repository.create(
 <% if (hasFields) { -%>
         { tenantId, <%= fields.map(f => `${f.name}: input.${f.name}`).join(', ') %> },
 <% } else { -%>
@@ -57,12 +60,27 @@ export class <%= pascal %>Usecase {
 <% } -%>
         tx,
       );
+      await this.auditLogRepository.create(
+        {
+          tenantId,
+          userId,
+          action: 'create',
+          resourceType: '<%= pascal %>',
+          resourceId: <%= camel %>.id,
+          before: null,
+          after: <%= camel %>.toAuditSnapshot(),
+        },
+        tx,
+      );
+      return <%= camel %>;
     });
   }
 
   async update(
     id: number,
     input: Update<%= pascal %>Input,
+    tenantId: number,
+    userId: number,
     ability: AppAbility,
   ): Promise<<%= pascal %>Model> {
     const <%= camel %> = this.validator.ensureExists(
@@ -81,17 +99,43 @@ export class <%= pascal %>Usecase {
 <% } -%>
 
     return this.transaction.run(async (tx) => {
-      return this.repository.update(id, updated, tx);
+      const result = await this.repository.update(id, updated, tx);
+      await this.auditLogRepository.create(
+        {
+          tenantId,
+          userId,
+          action: 'update',
+          resourceType: '<%= pascal %>',
+          resourceId: id,
+          before: <%= camel %>.toAuditSnapshot(),
+          after: result.toAuditSnapshot(),
+        },
+        tx,
+      );
+      return result;
     });
   }
 
-  async remove(id: number, ability: AppAbility): Promise<<%= pascal %>Model> {
-    this.validator.ensureExists(
+  async remove(id: number, userId: number, ability: AppAbility): Promise<<%= pascal %>Model> {
+    const <%= camel %> = this.validator.ensureExists(
       await this.repository.findById(id, ability),
       id,
     );
-    return this.transaction.run((tx) => {
-      return this.repository.delete(id, tx);
+    return this.transaction.run(async (tx) => {
+      const result = await this.repository.delete(id, tx);
+      await this.auditLogRepository.create(
+        {
+          tenantId: <%= camel %>.tenantId,
+          userId,
+          action: 'delete',
+          resourceType: '<%= pascal %>',
+          resourceId: id,
+          before: <%= camel %>.toAuditSnapshot(),
+          after: null,
+        },
+        tx,
+      );
+      return result;
     });
   }
 }
