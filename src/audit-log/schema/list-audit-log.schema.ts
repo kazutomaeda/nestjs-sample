@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { paginationSchema, sortOrderSchema } from '../../common/schema';
+import { zodId } from '../../common/types/id.type';
 
 export const listAuditLogSchema = paginationSchema.extend({
   sortBy: z.enum(['createdAt']).default('createdAt').openapi({
@@ -20,10 +21,7 @@ export const listAuditLogSchema = paginationSchema.extend({
     .enum(['admin', 'user'])
     .optional()
     .openapi({ description: '操作者種別でフィルタ', example: 'user' }),
-  actorId: z.coerce
-    .number()
-    .int()
-    .positive()
+  actorId: zodId()
     .optional()
     .openapi({ description: '操作者IDでフィルタ', example: 1 }),
 });

@@ -1,11 +1,12 @@
+import { ResourceId } from '../../../common/types/id.type';
 import { UserRole } from '../../types';
 
 export class AuthUserResponseDto {
   /** ユーザーID */
-  id: number;
+  id: ResourceId;
 
   /** テナントID */
-  tenantId: number;
+  tenantId: ResourceId;
 
   /** ロール */
   role: UserRole;

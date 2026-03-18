@@ -1,11 +1,12 @@
+import { ResourceId } from '../../common/types/id.type';
 import { TagResponseDto } from '../../tag/dto/tag-response.dto';
 
 export class TodoResponseDto {
   /** TODO ID */
-  id: number;
+  id: ResourceId;
 
   /** テナントID */
-  tenantId: number;
+  tenantId: ResourceId;
 
   /** TODOのタイトル */
   title: string;

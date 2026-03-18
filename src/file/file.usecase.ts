@@ -7,6 +7,7 @@ import { FileModel } from './file.model';
 import { FileValidator } from './file.validator';
 import { UploadFileInput, CopyFileInput } from './schema';
 import { AppAbility } from '../auth/external/casl-ability.factory';
+import { ResourceId } from '../common/types/id.type';
 
 @Injectable()
 export class FileUsecase {
@@ -17,7 +18,7 @@ export class FileUsecase {
     private readonly storage: FileStorageClient,
   ) {}
 
-  async findOne(id: number, ability: AppAbility): Promise<FileModel> {
+  async findOne(id: ResourceId, ability: AppAbility): Promise<FileModel> {
     return this.validator.ensureExists(
       await this.repository.findById(id, ability),
       id,
@@ -32,7 +33,7 @@ export class FileUsecase {
       size: number;
     },
     input: UploadFileInput,
-    tenantId: number,
+    tenantId: ResourceId,
   ): Promise<FileModel> {
     const ext = file.originalname.includes('.')
       ? '.' + file.originalname.split('.').pop()
@@ -58,9 +59,9 @@ export class FileUsecase {
   }
 
   async copy(
-    id: number,
+    id: ResourceId,
     input: CopyFileInput,
-    tenantId: number,
+    tenantId: ResourceId,
     ability: AppAbility,
   ): Promise<FileModel> {
     const source = this.validator.ensureExists(
@@ -91,7 +92,7 @@ export class FileUsecase {
     });
   }
 
-  async remove(id: number, ability: AppAbility): Promise<FileModel> {
+  async remove(id: ResourceId, ability: AppAbility): Promise<FileModel> {
     const file = this.validator.ensureExists(
       await this.repository.findById(id, ability),
       id,

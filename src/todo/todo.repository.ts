@@ -6,6 +6,7 @@ import { Prisma } from '@prisma/client';
 import { TagModel } from '../tag/tag.model';
 import { TodoModel } from './todo.model';
 import { AppAbility } from '../auth/external/casl-ability.factory';
+import { ResourceId } from '../common/types/id.type';
 
 export interface FindAllQuery {
   page: number;
@@ -63,7 +64,10 @@ export class TodoRepository {
     };
   }
 
-  async findById(id: number, ability: AppAbility): Promise<TodoModel | null> {
+  async findById(
+    id: ResourceId,
+    ability: AppAbility,
+  ): Promise<TodoModel | null> {
     const entity = await this.prisma.todo.findFirst({
       where: {
         id,
@@ -75,7 +79,7 @@ export class TodoRepository {
   }
 
   async create(
-    params: { tenantId: number; title: string; tagIds?: number[] },
+    params: { tenantId: ResourceId; title: string; tagIds?: ResourceId[] },
     tx: TransactionClient,
   ): Promise<TodoModel> {
     const entity = await tx.todo.create({
@@ -94,9 +98,9 @@ export class TodoRepository {
   }
 
   async update(
-    id: number,
+    id: ResourceId,
     model: TodoModel,
-    tagIds: number[] | undefined,
+    tagIds: ResourceId[] | undefined,
     tx: TransactionClient,
   ): Promise<TodoModel> {
     if (tagIds !== undefined) {
@@ -119,7 +123,7 @@ export class TodoRepository {
     return this.toModel(entity);
   }
 
-  async delete(id: number, tx: TransactionClient): Promise<TodoModel> {
+  async delete(id: ResourceId, tx: TransactionClient): Promise<TodoModel> {
     await tx.todoTag.deleteMany({ where: { todoId: id } });
     const entity = await tx.todo.delete({
       where: { id },

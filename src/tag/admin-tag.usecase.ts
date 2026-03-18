@@ -6,6 +6,7 @@ import { TagModel } from './tag.model';
 import { TagValidator } from './tag.validator';
 import { AdminCreateTagInput, UpdateTagInput } from './schema';
 import { AppAbility } from '../auth/external/casl-ability.factory';
+import { ResourceId } from '../common/types/id.type';
 
 @Injectable()
 export class AdminTagUsecase {
@@ -20,14 +21,17 @@ export class AdminTagUsecase {
     return this.repository.findAll(ability);
   }
 
-  async findOne(id: number, ability: AppAbility): Promise<TagModel> {
+  async findOne(id: ResourceId, ability: AppAbility): Promise<TagModel> {
     return this.validator.ensureExists(
       await this.repository.findById(id, ability),
       id,
     );
   }
 
-  async create(input: AdminCreateTagInput, adminId: number): Promise<TagModel> {
+  async create(
+    input: AdminCreateTagInput,
+    adminId: ResourceId,
+  ): Promise<TagModel> {
     const existing = await this.repository.findByName(
       input.name,
       input.tenantId,
@@ -57,9 +61,9 @@ export class AdminTagUsecase {
   }
 
   async update(
-    id: number,
+    id: ResourceId,
     input: UpdateTagInput,
-    adminId: number,
+    adminId: ResourceId,
     ability: AppAbility,
   ): Promise<TagModel> {
     const tag = this.validator.ensureExists(
@@ -97,8 +101,8 @@ export class AdminTagUsecase {
   }
 
   async remove(
-    id: number,
-    adminId: number,
+    id: ResourceId,
+    adminId: ResourceId,
     ability: AppAbility,
   ): Promise<TagModel> {
     const tag = this.validator.ensureExists(

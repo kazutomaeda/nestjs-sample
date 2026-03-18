@@ -7,9 +7,11 @@ const fields = h.parseFields(locals.fields)
 const hasFields = fields.length > 0
 const softDelete = !locals.hardDelete
 -%>
+import { ResourceId } from '../common/types/id.type';
+
 export class <%= pascal %>Model {
-  readonly id: number;
-  readonly tenantId: number;
+  readonly id: ResourceId;
+  readonly tenantId: ResourceId;
 <% fields.forEach(f => { -%>
   readonly <%= f.name %>: <%= h.tsType(f.type) %>;
 <% }) -%>
@@ -20,8 +22,8 @@ export class <%= pascal %>Model {
 <% } -%>
 
   constructor(params: {
-    id: number;
-    tenantId: number;
+    id: ResourceId;
+    tenantId: ResourceId;
 <% fields.forEach(f => { -%>
     <%= f.name %>: <%= h.tsType(f.type) %>;
 <% }) -%>

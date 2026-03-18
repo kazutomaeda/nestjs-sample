@@ -20,10 +20,7 @@ describe('MailService', () => {
       sendMail: jest.fn().mockResolvedValue(undefined),
     };
 
-    service = new MailService(
-      configService as ConfigService,
-      mockTransport,
-    );
+    service = new MailService(configService as ConfigService, mockTransport);
   });
 
   afterEach(() => {

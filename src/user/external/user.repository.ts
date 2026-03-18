@@ -6,6 +6,7 @@ import { UserModel } from '../user.model';
 import { User } from '../user.entity';
 import { UserRole, isValidUserRole } from '../../auth/types';
 import { AppAbility } from '../../auth/external/casl-ability.factory';
+import { ResourceId } from '../../common/types/id.type';
 
 @Injectable()
 export class UserRepository {
@@ -19,7 +20,10 @@ export class UserRepository {
     return entities.map((entity) => this.toModel(entity as User));
   }
 
-  async findById(id: number, ability: AppAbility): Promise<UserModel | null> {
+  async findById(
+    id: ResourceId,
+    ability: AppAbility,
+  ): Promise<UserModel | null> {
     const entity = await this.prisma.user.findFirst({
       where: {
         id,
@@ -38,7 +42,7 @@ export class UserRepository {
 
   async create(
     params: {
-      tenantId: number;
+      tenantId: ResourceId;
       role: UserRole;
       email: string;
       passwordHash: string;
@@ -59,7 +63,7 @@ export class UserRepository {
   }
 
   async update(
-    id: number,
+    id: ResourceId,
     model: UserModel,
     tx: TransactionClient,
   ): Promise<UserModel> {
@@ -74,7 +78,7 @@ export class UserRepository {
     return this.toModel(entity as User);
   }
 
-  async delete(id: number, tx: TransactionClient): Promise<UserModel> {
+  async delete(id: ResourceId, tx: TransactionClient): Promise<UserModel> {
     const entity = await tx.user.delete({
       where: { id },
     });

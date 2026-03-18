@@ -1,8 +1,9 @@
+import { ResourceId } from '../common/types/id.type';
 import { TagModel } from '../tag/tag.model';
 
 export class TodoModel {
-  readonly id: number;
-  readonly tenantId: number;
+  readonly id: ResourceId;
+  readonly tenantId: ResourceId;
   readonly title: string;
   readonly completed: boolean;
   readonly createdAt: Date;
@@ -10,8 +11,8 @@ export class TodoModel {
   readonly tags?: TagModel[];
 
   constructor(params: {
-    id: number;
-    tenantId: number;
+    id: ResourceId;
+    tenantId: ResourceId;
     title: string;
     completed: boolean;
     createdAt: Date;

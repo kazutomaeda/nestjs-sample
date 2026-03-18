@@ -1,6 +1,8 @@
+import { ResourceId } from '../../common/types/id.type';
+
 export class FileResponseDto {
   /** ファイルID */
-  id: number;
+  id: ResourceId;
 
   /** オリジナルファイル名 */
   originalName: string;
@@ -15,7 +17,7 @@ export class FileResponseDto {
   relatedTable: string | null;
 
   /** 関連レコードID */
-  relatedId: number | null;
+  relatedId: ResourceId | null;
 
   /** 署名付きURL */
   url: string;

@@ -6,6 +6,7 @@ import { UserModel } from './user.model';
 import { UserValidator } from './user.validator';
 import { CreateUserInput, UpdateUserInput } from './schema';
 import { AppAbility } from '../auth/external/casl-ability.factory';
+import { ResourceId } from '../common/types/id.type';
 
 @Injectable()
 export class UserUsecase {
@@ -19,14 +20,17 @@ export class UserUsecase {
     return this.repository.findAll(ability);
   }
 
-  async findOne(id: number, ability: AppAbility): Promise<UserModel> {
+  async findOne(id: ResourceId, ability: AppAbility): Promise<UserModel> {
     return this.validator.ensureExists(
       await this.repository.findById(id, ability),
       id,
     );
   }
 
-  async create(input: CreateUserInput, tenantId: number): Promise<UserModel> {
+  async create(
+    input: CreateUserInput,
+    tenantId: ResourceId,
+  ): Promise<UserModel> {
     this.validator.ensureRoleAllowed(input.role);
     const existingUser = await this.repository.findByEmail(input.email);
     this.validator.ensureEmailNotDuplicated(existingUser, input.email);
@@ -47,7 +51,7 @@ export class UserUsecase {
   }
 
   async update(
-    id: number,
+    id: ResourceId,
     input: UpdateUserInput,
     ability: AppAbility,
   ): Promise<UserModel> {
@@ -74,8 +78,8 @@ export class UserUsecase {
   }
 
   async remove(
-    id: number,
-    currentUserId: number,
+    id: ResourceId,
+    currentUserId: ResourceId,
     ability: AppAbility,
   ): Promise<UserModel> {
     this.validator.ensureNotSelf(currentUserId, id);

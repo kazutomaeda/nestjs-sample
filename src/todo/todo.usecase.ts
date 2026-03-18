@@ -13,6 +13,7 @@ import {
 } from './schema';
 import { AppAbility } from '../auth/external/casl-ability.factory';
 import { FindAllQuery } from './todo.repository';
+import { ResourceId } from '../common/types/id.type';
 
 @Injectable()
 export class TodoUsecase {
@@ -55,7 +56,7 @@ export class TodoUsecase {
     return items;
   }
 
-  async findOne(id: number, ability: AppAbility): Promise<TodoModel> {
+  async findOne(id: ResourceId, ability: AppAbility): Promise<TodoModel> {
     return this.validator.ensureExists(
       await this.repository.findById(id, ability),
       id,
@@ -64,8 +65,8 @@ export class TodoUsecase {
 
   async create(
     input: CreateTodoInput,
-    tenantId: number,
-    userId: number,
+    tenantId: ResourceId,
+    userId: ResourceId,
   ): Promise<TodoModel> {
     return this.transaction.run(async (tx) => {
       const tagIds = input.tags
@@ -93,10 +94,10 @@ export class TodoUsecase {
   }
 
   async update(
-    id: number,
+    id: ResourceId,
     input: UpdateTodoInput,
-    tenantId: number,
-    userId: number,
+    tenantId: ResourceId,
+    userId: ResourceId,
     ability: AppAbility,
   ): Promise<TodoModel> {
     const todo = this.validator.ensureExists(
@@ -129,8 +130,8 @@ export class TodoUsecase {
   }
 
   async remove(
-    id: number,
-    userId: number,
+    id: ResourceId,
+    userId: ResourceId,
     ability: AppAbility,
   ): Promise<TodoModel> {
     const todo = this.validator.ensureExists(

@@ -1,13 +1,15 @@
+import { ResourceId } from '../common/types/id.type';
+
 export class TagModel {
-  readonly id: number;
-  readonly tenantId: number;
+  readonly id: ResourceId;
+  readonly tenantId: ResourceId;
   readonly name: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 
   constructor(params: {
-    id: number;
-    tenantId: number;
+    id: ResourceId;
+    tenantId: ResourceId;
     name: string;
     createdAt: Date;
     updatedAt: Date;

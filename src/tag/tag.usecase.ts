@@ -5,6 +5,7 @@ import { TagModel } from './tag.model';
 import { TagValidator } from './tag.validator';
 import { CreateTagInput, UpdateTagInput } from './schema';
 import { AppAbility } from '../auth/external/casl-ability.factory';
+import { ResourceId } from '../common/types/id.type';
 
 @Injectable()
 export class TagUsecase {
@@ -18,14 +19,14 @@ export class TagUsecase {
     return this.repository.findAll(ability);
   }
 
-  async findOne(id: number, ability: AppAbility): Promise<TagModel> {
+  async findOne(id: ResourceId, ability: AppAbility): Promise<TagModel> {
     return this.validator.ensureExists(
       await this.repository.findById(id, ability),
       id,
     );
   }
 
-  async create(input: CreateTagInput, tenantId: number): Promise<TagModel> {
+  async create(input: CreateTagInput, tenantId: ResourceId): Promise<TagModel> {
     const existing = await this.repository.findByName(input.name, tenantId);
     this.validator.ensureNameNotDuplicated(existing, input.name);
 
@@ -35,9 +36,9 @@ export class TagUsecase {
   }
 
   async update(
-    id: number,
+    id: ResourceId,
     input: UpdateTagInput,
-    tenantId: number,
+    tenantId: ResourceId,
     ability: AppAbility,
   ): Promise<TagModel> {
     const tag = this.validator.ensureExists(
@@ -57,7 +58,7 @@ export class TagUsecase {
     });
   }
 
-  async remove(id: number, ability: AppAbility): Promise<TagModel> {
+  async remove(id: ResourceId, ability: AppAbility): Promise<TagModel> {
     this.validator.ensureExists(
       await this.repository.findById(id, ability),
       id,

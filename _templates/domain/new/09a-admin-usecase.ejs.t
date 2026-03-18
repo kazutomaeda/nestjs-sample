@@ -15,6 +15,7 @@ import { <%= pascal %>Model } from './<%= name %>.model';
 import { <%= pascal %>Validator } from './<%= name %>.validator';
 import { AdminCreate<%= pascal %>Input, Update<%= pascal %>Input, List<%= pascal %>Input } from './schema';
 import { AppAbility } from '../auth/external/casl-ability.factory';
+import { ResourceId } from '../common/types/id.type';
 
 @Injectable()
 export class Admin<%= pascal %>Usecase {
@@ -38,14 +39,14 @@ export class Admin<%= pascal %>Usecase {
     return this.repository.findAll(ability, query);
   }
 
-  async findOne(id: number, ability: AppAbility): Promise<<%= pascal %>Model> {
+  async findOne(id: ResourceId, ability: AppAbility): Promise<<%= pascal %>Model> {
     return this.validator.ensureExists(
       await this.repository.findById(id, ability),
       id,
     );
   }
 
-  async create(input: AdminCreate<%= pascal %>Input, adminId: number): Promise<<%= pascal %>Model> {
+  async create(input: AdminCreate<%= pascal %>Input, adminId: ResourceId): Promise<<%= pascal %>Model> {
     return this.transaction.run(async (tx) => {
       const <%= camel %> = await this.repository.create(
 <% if (hasFields) { -%>
@@ -73,9 +74,9 @@ export class Admin<%= pascal %>Usecase {
   }
 
   async update(
-    id: number,
+    id: ResourceId,
     input: Update<%= pascal %>Input,
-    adminId: number,
+    adminId: ResourceId,
     ability: AppAbility,
   ): Promise<<%= pascal %>Model> {
     const <%= camel %> = this.validator.ensureExists(
@@ -112,7 +113,7 @@ export class Admin<%= pascal %>Usecase {
     });
   }
 
-  async remove(id: number, adminId: number, ability: AppAbility): Promise<<%= pascal %>Model> {
+  async remove(id: ResourceId, adminId: ResourceId, ability: AppAbility): Promise<<%= pascal %>Model> {
     const <%= camel %> = this.validator.ensureExists(
       await this.repository.findById(id, ability),
       id,

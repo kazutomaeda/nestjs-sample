@@ -4,13 +4,13 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Post,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { ParseIdPipe, ResourceId } from '../common/types/id.type';
 import { ApiBody, ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { FileUsecase } from './file.usecase';
 import { FileModel } from './file.model';
@@ -47,7 +47,7 @@ export class FileController {
   @ApiResponse({ status: 404, description: 'ファイルが見つからない' })
   @CheckPolicy((ability) => ability.can('read', 'File'))
   async findOne(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @CurrentUser() user: UserJwtPayload,
   ): Promise<FileResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
@@ -97,7 +97,7 @@ export class FileController {
   @ApiResponse({ status: 404, description: 'コピー元ファイルが見つからない' })
   @CheckPolicy((ability) => ability.can('create', 'File'))
   async copy(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @Body(new ZodValidationPipe(copyFileSchema)) dto: CopyFileInput,
     @CurrentUser() user: UserJwtPayload,
   ): Promise<FileResponseDto> {
@@ -116,7 +116,7 @@ export class FileController {
   @ApiResponse({ status: 404, description: 'ファイルが見つからない' })
   @CheckPolicy((ability) => ability.can('delete', 'File'))
   async remove(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @CurrentUser() user: UserJwtPayload,
   ): Promise<FileResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);

@@ -7,6 +7,7 @@ import { AuditLogModel } from './audit-log.model';
 import { AuditLogValidator } from './audit-log.validator';
 import { ListAuditLogInput } from './schema';
 import { AppAbility } from '../auth/external/casl-ability.factory';
+import { ResourceId } from '../common/types/id.type';
 
 @Injectable()
 export class AuditLogUsecase {
@@ -32,7 +33,7 @@ export class AuditLogUsecase {
     return this.repository.findAll(ability, query);
   }
 
-  async findOne(id: number, ability: AppAbility): Promise<AuditLogModel> {
+  async findOne(id: ResourceId, ability: AppAbility): Promise<AuditLogModel> {
     return this.validator.ensureExists(
       await this.repository.findById(id, ability),
       id,

@@ -4,12 +4,12 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ParseIdPipe, ResourceId } from '../common/types/id.type';
 import { UserUsecase } from './user.usecase';
 import { UserModel } from './user.model';
 import { UserResponseDto } from './dto/user-response.dto';
@@ -60,7 +60,7 @@ export class UserController {
   @ApiResponse({ status: 404, description: 'ユーザーが見つからない' })
   @CheckPolicy((ability) => ability.can('read', 'User'))
   async findOne(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @CurrentUser() user: UserJwtPayload,
   ): Promise<UserResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
@@ -96,7 +96,7 @@ export class UserController {
   @ApiResponse({ status: 404, description: 'ユーザーが見つからない' })
   @CheckPolicy((ability) => ability.can('update', 'User'))
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @Body(new ZodValidationPipe(updateUserSchema)) dto: UpdateUserInput,
     @CurrentUser() user: UserJwtPayload,
   ): Promise<UserResponseDto> {
@@ -114,7 +114,7 @@ export class UserController {
   @ApiResponse({ status: 404, description: 'ユーザーが見つからない' })
   @CheckPolicy((ability) => ability.can('delete', 'User'))
   async remove(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @CurrentUser() user: UserJwtPayload,
   ): Promise<UserResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);

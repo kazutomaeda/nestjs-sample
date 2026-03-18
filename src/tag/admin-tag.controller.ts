@@ -4,12 +4,12 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ParseIdPipe, ResourceId } from '../common/types/id.type';
 import { AdminTagUsecase } from './admin-tag.usecase';
 import { TagModel } from './tag.model';
 import { TagResponseDto } from './dto/tag-response.dto';
@@ -58,7 +58,7 @@ export class AdminTagController {
   @ApiResponse({ status: 404, description: 'タグが見つからない' })
   @CheckPolicy((ability) => ability.can('read', 'Tag'))
   async findOne(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @CurrentUser() user: JwtPayload,
   ): Promise<TagResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
@@ -95,7 +95,7 @@ export class AdminTagController {
   @ApiResponse({ status: 409, description: 'タグ名が重複' })
   @CheckPolicy((ability) => ability.can('update', 'Tag'))
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @Body(new ZodValidationPipe(updateTagSchema)) dto: UpdateTagInput,
     @CurrentUser() user: JwtPayload,
   ): Promise<TagResponseDto> {
@@ -113,7 +113,7 @@ export class AdminTagController {
   @ApiResponse({ status: 404, description: 'タグが見つからない' })
   @CheckPolicy((ability) => ability.can('delete', 'Tag'))
   async remove(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @CurrentUser() user: JwtPayload,
   ): Promise<TagResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);

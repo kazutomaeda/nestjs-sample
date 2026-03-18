@@ -1,9 +1,11 @@
+import { ResourceId } from '../../common/types/id.type';
+
 export class UserResponseDto {
   /** ユーザーID */
-  id: number;
+  id: ResourceId;
 
   /** テナントID */
-  tenantId: number;
+  tenantId: ResourceId;
 
   /** ロール */
   role: string;

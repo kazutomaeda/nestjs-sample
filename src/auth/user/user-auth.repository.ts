@@ -4,6 +4,7 @@ import { TransactionClient } from '../../prisma/prisma.types';
 import { UserModel, UserWithPasswordModel } from '../../user/user.model';
 import { User, UserRefreshToken, UserPasswordReset } from './user-auth.entity';
 import { UserRole, isValidUserRole } from '../types';
+import { ResourceId } from '../../common/types/id.type';
 
 @Injectable()
 export class UserAuthRepository {
@@ -16,7 +17,7 @@ export class UserAuthRepository {
     return entity ? this.toUserWithPasswordModel(entity as User) : null;
   }
 
-  async findUserById(id: number): Promise<UserModel | null> {
+  async findUserById(id: ResourceId): Promise<UserModel | null> {
     const entity = await this.prisma.user.findUnique({
       where: { id },
     });
@@ -24,7 +25,7 @@ export class UserAuthRepository {
   }
 
   async createRefreshToken(
-    params: { userId: number; token: string; expiresAt: Date },
+    params: { userId: ResourceId; token: string; expiresAt: Date },
     tx: TransactionClient,
   ): Promise<void> {
     await tx.userRefreshToken.create({
@@ -53,7 +54,7 @@ export class UserAuthRepository {
   }
 
   async deleteAllRefreshTokensByUserId(
-    userId: number,
+    userId: ResourceId,
     tx: TransactionClient,
   ): Promise<void> {
     await tx.userRefreshToken.deleteMany({
@@ -62,7 +63,7 @@ export class UserAuthRepository {
   }
 
   async createPasswordReset(
-    params: { userId: number; token: string; expiresAt: Date },
+    params: { userId: ResourceId; token: string; expiresAt: Date },
     tx: TransactionClient,
   ): Promise<void> {
     await tx.userPasswordReset.create({
@@ -92,7 +93,7 @@ export class UserAuthRepository {
   }
 
   async updateUserPassword(
-    userId: number,
+    userId: ResourceId,
     passwordHash: string,
     tx: TransactionClient,
   ): Promise<void> {

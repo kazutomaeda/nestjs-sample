@@ -1,15 +1,17 @@
+import { ResourceId } from '../../common/types/id.type';
+
 export class AuditLogResponseDto {
   /** 監査ログID */
-  id: number;
+  id: ResourceId;
 
   /** テナントID */
-  tenantId: number;
+  tenantId: ResourceId;
 
   /** 操作者種別 ('admin' | 'user') */
   actorType: string;
 
   /** 操作者ID */
-  actorId: number;
+  actorId: ResourceId;
 
   /** 操作種別 (create / update / delete) */
   action: string;
@@ -18,7 +20,7 @@ export class AuditLogResponseDto {
   resourceType: string;
 
   /** リソースID */
-  resourceId: number;
+  resourceId: ResourceId;
 
   /** 変更前データ */
   before: object | null;

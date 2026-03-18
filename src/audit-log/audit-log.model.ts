@@ -1,23 +1,25 @@
+import { ResourceId } from '../common/types/id.type';
+
 export class AuditLogModel {
-  readonly id: number;
-  readonly tenantId: number;
+  readonly id: ResourceId;
+  readonly tenantId: ResourceId;
   readonly actorType: string;
-  readonly actorId: number;
+  readonly actorId: ResourceId;
   readonly action: string;
   readonly resourceType: string;
-  readonly resourceId: number;
+  readonly resourceId: ResourceId;
   readonly before: object | null;
   readonly after: object | null;
   readonly createdAt: Date;
 
   constructor(params: {
-    id: number;
-    tenantId: number;
+    id: ResourceId;
+    tenantId: ResourceId;
     actorType: string;
-    actorId: number;
+    actorId: ResourceId;
     action: string;
     resourceType: string;
-    resourceId: number;
+    resourceId: ResourceId;
     before: object | null;
     after: object | null;
     createdAt: Date;

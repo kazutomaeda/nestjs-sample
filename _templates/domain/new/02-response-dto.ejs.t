@@ -6,9 +6,11 @@ const pascal = h.changeCase.pascal(name)
 const fields = h.parseFields(locals.fields)
 const hasFields = fields.length > 0
 -%>
+import { ResourceId } from '../../common/types/id.type';
+
 export class <%= pascal %>ResponseDto {
   /** ID */
-  id: number;
+  id: ResourceId;
 
 <% if (hasFields) { -%>
 <% fields.forEach(f => { -%>

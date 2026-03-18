@@ -5,6 +5,7 @@ import { TransactionClient } from '../../prisma/prisma.types';
 import { TagModel } from '../tag.model';
 import { Tag } from '../tag.entity';
 import { AppAbility } from '../../auth/external/casl-ability.factory';
+import { ResourceId } from '../../common/types/id.type';
 
 @Injectable()
 export class TagRepository {
@@ -18,7 +19,10 @@ export class TagRepository {
     return entities.map((entity) => this.toModel(entity));
   }
 
-  async findById(id: number, ability: AppAbility): Promise<TagModel | null> {
+  async findById(
+    id: ResourceId,
+    ability: AppAbility,
+  ): Promise<TagModel | null> {
     const entity = await this.prisma.tag.findFirst({
       where: {
         id,
@@ -28,14 +32,20 @@ export class TagRepository {
     return entity ? this.toModel(entity) : null;
   }
 
-  async findByName(name: string, tenantId: number): Promise<TagModel | null> {
+  async findByName(
+    name: string,
+    tenantId: ResourceId,
+  ): Promise<TagModel | null> {
     const entity = await this.prisma.tag.findFirst({
       where: { name, tenantId },
     });
     return entity ? this.toModel(entity) : null;
   }
 
-  async findByNames(names: string[], tenantId: number): Promise<TagModel[]> {
+  async findByNames(
+    names: string[],
+    tenantId: ResourceId,
+  ): Promise<TagModel[]> {
     const entities = await this.prisma.tag.findMany({
       where: { name: { in: names }, tenantId },
     });
@@ -43,7 +53,7 @@ export class TagRepository {
   }
 
   async create(
-    params: { name: string; tenantId: number },
+    params: { name: string; tenantId: ResourceId },
     tx: TransactionClient,
   ): Promise<TagModel> {
     const entity = await tx.tag.create({
@@ -54,7 +64,7 @@ export class TagRepository {
 
   async createMany(
     names: string[],
-    tenantId: number,
+    tenantId: ResourceId,
     tx: TransactionClient,
   ): Promise<TagModel[]> {
     const created: TagModel[] = [];
@@ -66,7 +76,7 @@ export class TagRepository {
   }
 
   async update(
-    id: number,
+    id: ResourceId,
     model: TagModel,
     tx: TransactionClient,
   ): Promise<TagModel> {
@@ -77,7 +87,7 @@ export class TagRepository {
     return this.toModel(entity);
   }
 
-  async delete(id: number, tx: TransactionClient): Promise<TagModel> {
+  async delete(id: ResourceId, tx: TransactionClient): Promise<TagModel> {
     const entity = await tx.tag.delete({ where: { id } });
     return this.toModel(entity);
   }

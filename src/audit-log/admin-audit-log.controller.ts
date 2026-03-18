@@ -1,12 +1,6 @@
-import {
-  Controller,
-  Get,
-  Param,
-  ParseIntPipe,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ParseIdPipe, ResourceId } from '../common/types/id.type';
 import { AuditLogUsecase } from './audit-log.usecase';
 import { AuditLogModel } from './audit-log.model';
 import { AuditLogResponseDto } from './dto/audit-log-response.dto';
@@ -63,7 +57,7 @@ export class AdminAuditLogController {
   @ApiResponse({ status: 404, description: '監査ログが見つからない' })
   @CheckPolicy((ability) => ability.can('read', 'AuditLog'))
   async findOne(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @CurrentUser() user: JwtPayload,
   ): Promise<AuditLogResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);

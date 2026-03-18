@@ -5,12 +5,16 @@ import { TransactionClient } from '../prisma/prisma.types';
 import { File as FileEntity } from '@prisma/client';
 import { FileModel } from './file.model';
 import { AppAbility } from '../auth/external/casl-ability.factory';
+import { ResourceId } from '../common/types/id.type';
 
 @Injectable()
 export class FileRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findById(id: number, ability: AppAbility): Promise<FileModel | null> {
+  async findById(
+    id: ResourceId,
+    ability: AppAbility,
+  ): Promise<FileModel | null> {
     const entity = await this.prisma.file.findFirst({
       where: {
         id,
@@ -22,13 +26,13 @@ export class FileRepository {
 
   async create(
     params: {
-      tenantId: number;
+      tenantId: ResourceId;
       key: string;
       originalName: string;
       mimeType: string;
       size: number;
       relatedTable?: string;
-      relatedId?: number;
+      relatedId?: ResourceId;
     },
     tx: TransactionClient,
   ): Promise<FileModel> {
@@ -46,7 +50,7 @@ export class FileRepository {
     return this.toModel(entity);
   }
 
-  async delete(id: number, tx: TransactionClient): Promise<FileModel> {
+  async delete(id: ResourceId, tx: TransactionClient): Promise<FileModel> {
     const entity = await tx.file.delete({
       where: { id },
     });

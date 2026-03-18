@@ -14,12 +14,12 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ParseIdPipe, ResourceId } from '../common/types/id.type';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Admin<%= pascal %>Usecase } from './admin-<%= name %>.usecase';
 import { <%= pascal %>Model } from './<%= name %>.model';
@@ -82,7 +82,7 @@ export class Admin<%= pascal %>Controller {
   @ApiResponse({ status: 404, description: '<%= pascal %>が見つからない' })
   @CheckPolicy((ability) => ability.can('read', '<%= pascal %>'))
   async findOne(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @CurrentUser() user: JwtPayload,
   ): Promise<<%= pascal %>ResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
@@ -117,7 +117,7 @@ export class Admin<%= pascal %>Controller {
   @ApiResponse({ status: 404, description: '<%= pascal %>が見つからない' })
   @CheckPolicy((ability) => ability.can('update', '<%= pascal %>'))
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @Body(new ZodValidationPipe(update<%= pascal %>Schema)) dto: Update<%= pascal %>Input,
     @CurrentUser() user: JwtPayload,
   ): Promise<<%= pascal %>ResponseDto> {
@@ -135,7 +135,7 @@ export class Admin<%= pascal %>Controller {
   @ApiResponse({ status: 404, description: '<%= pascal %>が見つからない' })
   @CheckPolicy((ability) => ability.can('delete', '<%= pascal %>'))
   async remove(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @CurrentUser() user: JwtPayload,
   ): Promise<<%= pascal %>ResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);

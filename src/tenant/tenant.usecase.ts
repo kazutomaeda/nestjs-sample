@@ -7,6 +7,7 @@ import { TenantModel } from './tenant.model';
 import { TenantValidator } from './tenant.validator';
 import { CreateTenantInput, UpdateTenantInput } from './schema';
 import { AppAbility } from '../auth/external/casl-ability.factory';
+import { ResourceId } from '../common/types/id.type';
 
 @Injectable()
 export class TenantUsecase {
@@ -21,7 +22,7 @@ export class TenantUsecase {
     return this.tenantRepository.findAll(ability);
   }
 
-  async findOne(id: number, ability: AppAbility): Promise<TenantModel> {
+  async findOne(id: ResourceId, ability: AppAbility): Promise<TenantModel> {
     return this.validator.ensureExists(
       await this.tenantRepository.findById(id, ability),
       id,
@@ -50,7 +51,7 @@ export class TenantUsecase {
   }
 
   async update(
-    id: number,
+    id: ResourceId,
     input: UpdateTenantInput,
     ability: AppAbility,
   ): Promise<TenantModel> {
@@ -64,7 +65,7 @@ export class TenantUsecase {
     });
   }
 
-  async remove(id: number, ability: AppAbility): Promise<TenantModel> {
+  async remove(id: ResourceId, ability: AppAbility): Promise<TenantModel> {
     this.validator.ensureExists(
       await this.tenantRepository.findById(id, ability),
       id,

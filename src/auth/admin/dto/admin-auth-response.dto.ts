@@ -1,6 +1,8 @@
+import { ResourceId } from '../../../common/types/id.type';
+
 export class AdminAuthResponseDto {
   /** 管理者ID */
-  id: number;
+  id: ResourceId;
 
   /** メールアドレス */
   email: string;

@@ -1,8 +1,9 @@
+import { ResourceId } from '../common/types/id.type';
 import { UserRole } from '../auth/types';
 
 export class UserModel {
-  readonly id: number;
-  readonly tenantId: number;
+  readonly id: ResourceId;
+  readonly tenantId: ResourceId;
   readonly role: UserRole;
   readonly email: string;
   readonly name: string;
@@ -10,8 +11,8 @@ export class UserModel {
   readonly updatedAt: Date;
 
   constructor(params: {
-    id: number;
-    tenantId: number;
+    id: ResourceId;
+    tenantId: ResourceId;
     role: UserRole;
     email: string;
     name: string;

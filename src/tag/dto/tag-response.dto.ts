@@ -1,9 +1,11 @@
+import { ResourceId } from '../../common/types/id.type';
+
 export class TagResponseDto {
   /** タグ ID */
-  id: number;
+  id: ResourceId;
 
   /** テナントID */
-  tenantId: number;
+  tenantId: ResourceId;
 
   /** タグ名 */
   name: string;

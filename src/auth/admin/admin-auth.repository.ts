@@ -7,6 +7,7 @@ import {
   AdminRefreshToken,
   AdminPasswordReset,
 } from './admin-auth.entity';
+import { ResourceId } from '../../common/types/id.type';
 
 @Injectable()
 export class AdminAuthRepository {
@@ -21,7 +22,7 @@ export class AdminAuthRepository {
     return entity ? this.toAdminWithPasswordModel(entity as Admin) : null;
   }
 
-  async findAdminById(id: number): Promise<AdminModel | null> {
+  async findAdminById(id: ResourceId): Promise<AdminModel | null> {
     const entity = await this.prisma.admin.findUnique({
       where: { id },
     });
@@ -29,7 +30,7 @@ export class AdminAuthRepository {
   }
 
   async createRefreshToken(
-    params: { adminId: number; token: string; expiresAt: Date },
+    params: { adminId: ResourceId; token: string; expiresAt: Date },
     tx: TransactionClient,
   ): Promise<void> {
     await tx.adminRefreshToken.create({
@@ -58,7 +59,7 @@ export class AdminAuthRepository {
   }
 
   async deleteAllRefreshTokensByAdminId(
-    adminId: number,
+    adminId: ResourceId,
     tx: TransactionClient,
   ): Promise<void> {
     await tx.adminRefreshToken.deleteMany({
@@ -67,7 +68,7 @@ export class AdminAuthRepository {
   }
 
   async createPasswordReset(
-    params: { adminId: number; token: string; expiresAt: Date },
+    params: { adminId: ResourceId; token: string; expiresAt: Date },
     tx: TransactionClient,
   ): Promise<void> {
     await tx.adminPasswordReset.create({
@@ -97,7 +98,7 @@ export class AdminAuthRepository {
   }
 
   async updateAdminPassword(
-    adminId: number,
+    adminId: ResourceId,
     passwordHash: string,
     tx: TransactionClient,
   ): Promise<void> {

@@ -1,24 +1,26 @@
+import { ResourceId } from '../common/types/id.type';
+
 export class FileModel {
-  readonly id: number;
-  readonly tenantId: number;
+  readonly id: ResourceId;
+  readonly tenantId: ResourceId;
   readonly key: string;
   readonly originalName: string;
   readonly mimeType: string;
   readonly size: number;
   readonly relatedTable: string | null;
-  readonly relatedId: number | null;
+  readonly relatedId: ResourceId | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 
   constructor(params: {
-    id: number;
-    tenantId: number;
+    id: ResourceId;
+    tenantId: ResourceId;
     key: string;
     originalName: string;
     mimeType: string;
     size: number;
     relatedTable: string | null;
-    relatedId: number | null;
+    relatedId: ResourceId | null;
     createdAt: Date;
     updatedAt: Date;
   }) {

@@ -5,6 +5,7 @@ import { TransactionClient } from '../prisma/prisma.types';
 import { TenantModel } from './tenant.model';
 import { Tenant } from './tenant.entity';
 import { AppAbility } from '../auth/external/casl-ability.factory';
+import { ResourceId } from '../common/types/id.type';
 
 @Injectable()
 export class TenantRepository {
@@ -18,7 +19,10 @@ export class TenantRepository {
     return entities.map((entity) => this.toModel(entity as Tenant));
   }
 
-  async findById(id: number, ability: AppAbility): Promise<TenantModel | null> {
+  async findById(
+    id: ResourceId,
+    ability: AppAbility,
+  ): Promise<TenantModel | null> {
     const entity = await this.prisma.tenant.findFirst({
       where: {
         id,
@@ -39,7 +43,7 @@ export class TenantRepository {
   }
 
   async update(
-    id: number,
+    id: ResourceId,
     model: TenantModel,
     tx: TransactionClient,
   ): Promise<TenantModel> {
@@ -50,7 +54,7 @@ export class TenantRepository {
     return this.toModel(entity as Tenant);
   }
 
-  async delete(id: number, tx: TransactionClient): Promise<TenantModel> {
+  async delete(id: ResourceId, tx: TransactionClient): Promise<TenantModel> {
     // Ordered deletion: TodoTags → Todos → Tags → Users → Tenant
     const todoIds = await tx.todo.findMany({
       where: { tenantId: id },

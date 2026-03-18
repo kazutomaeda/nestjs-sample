@@ -4,12 +4,12 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ParseIdPipe, ResourceId } from '../common/types/id.type';
 import { TagUsecase } from './tag.usecase';
 import { TagModel } from './tag.model';
 import { TagResponseDto } from './dto/tag-response.dto';
@@ -67,7 +67,7 @@ export class TagController {
   })
   @ApiResponse({ status: 404, description: 'タグが見つからない' })
   async findOne(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @CurrentUser() user: UserJwtPayload,
   ): Promise<TagResponseDto> {
     const ability = this.getAbility(user);
@@ -104,7 +104,7 @@ export class TagController {
   @ApiResponse({ status: 404, description: 'タグが見つからない' })
   @ApiResponse({ status: 409, description: 'タグ名が重複' })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @Body(new ZodValidationPipe(updateTagSchema)) dto: UpdateTagInput,
     @CurrentUser() user: UserJwtPayload,
   ): Promise<TagResponseDto> {
@@ -122,7 +122,7 @@ export class TagController {
   })
   @ApiResponse({ status: 404, description: 'タグが見つからない' })
   async remove(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @CurrentUser() user: UserJwtPayload,
   ): Promise<TagResponseDto> {
     const ability = this.getAbility(user);

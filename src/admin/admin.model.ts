@@ -1,12 +1,14 @@
+import { ResourceId } from '../common/types/id.type';
+
 export class AdminModel {
-  readonly id: number;
+  readonly id: ResourceId;
   readonly email: string;
   readonly name: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 
   constructor(params: {
-    id: number;
+    id: ResourceId;
     email: string;
     name: string;
     createdAt: Date;

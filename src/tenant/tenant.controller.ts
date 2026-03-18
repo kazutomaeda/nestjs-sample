@@ -4,12 +4,12 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ParseIdPipe, ResourceId } from '../common/types/id.type';
 import { TenantUsecase } from './tenant.usecase';
 import { TenantModel } from './tenant.model';
 import { TenantResponseDto } from './dto/tenant-response.dto';
@@ -60,7 +60,7 @@ export class TenantController {
   @ApiResponse({ status: 404, description: 'テナントが見つからない' })
   @CheckPolicy((ability) => ability.can('read', 'Tenant'))
   async findOne(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @CurrentUser() user: UserJwtPayload,
   ): Promise<TenantResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
@@ -94,7 +94,7 @@ export class TenantController {
   @ApiResponse({ status: 404, description: 'テナントが見つからない' })
   @CheckPolicy((ability) => ability.can('update', 'Tenant'))
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @Body(new ZodValidationPipe(updateTenantSchema)) dto: UpdateTenantInput,
     @CurrentUser() user: UserJwtPayload,
   ): Promise<TenantResponseDto> {
@@ -112,7 +112,7 @@ export class TenantController {
   @ApiResponse({ status: 404, description: 'テナントが見つからない' })
   @CheckPolicy((ability) => ability.can('delete', 'Tenant'))
   async remove(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @CurrentUser() user: UserJwtPayload,
   ): Promise<TenantResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);

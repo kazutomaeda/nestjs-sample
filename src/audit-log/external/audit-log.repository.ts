@@ -5,6 +5,7 @@ import { TransactionClient } from '../../prisma/prisma.types';
 import { Prisma, AuditLog } from '@prisma/client';
 import { AuditLogModel } from '../audit-log.model';
 import { AppAbility } from '../../auth/external/casl-ability.factory';
+import { ResourceId } from '../../common/types/id.type';
 
 export interface FindAllQuery {
   page: number;
@@ -18,12 +19,12 @@ export interface FindAllQuery {
 }
 
 export interface CreateAuditLogParams {
-  tenantId: number;
+  tenantId: ResourceId;
   actorType: string;
-  actorId: number;
+  actorId: ResourceId;
   action: string;
   resourceType: string;
-  resourceId: number;
+  resourceId: ResourceId;
   before: object | null;
   after: object | null;
 }
@@ -67,7 +68,7 @@ export class AuditLogRepository {
   }
 
   async findById(
-    id: number,
+    id: ResourceId,
     ability: AppAbility,
   ): Promise<AuditLogModel | null> {
     const entity = await this.prisma.auditLog.findFirst({

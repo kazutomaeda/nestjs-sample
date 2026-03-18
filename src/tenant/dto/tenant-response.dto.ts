@@ -1,6 +1,8 @@
+import { ResourceId } from '../../common/types/id.type';
+
 export class TenantResponseDto {
   /** テナントID */
-  id: number;
+  id: ResourceId;
 
   /** テナント名 */
   name: string;

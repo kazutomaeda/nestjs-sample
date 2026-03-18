@@ -4,13 +4,13 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ParseIdPipe, ResourceId } from '../common/types/id.type';
 import { AdminTodoUsecase } from './admin-todo.usecase';
 import { TodoModel } from './todo.model';
 import { TodoResponseDto } from './dto/todo-response.dto';
@@ -75,7 +75,7 @@ export class AdminTodoController {
   @ApiResponse({ status: 404, description: 'TODOが見つからない' })
   @CheckPolicy((ability) => ability.can('read', 'Todo'))
   async findOne(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @CurrentUser() user: JwtPayload,
   ): Promise<TodoResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
@@ -111,7 +111,7 @@ export class AdminTodoController {
   @ApiResponse({ status: 404, description: 'TODOが見つからない' })
   @CheckPolicy((ability) => ability.can('update', 'Todo'))
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @Body(new ZodValidationPipe(updateTodoSchema)) dto: UpdateTodoInput,
     @CurrentUser() user: JwtPayload,
   ): Promise<TodoResponseDto> {
@@ -129,7 +129,7 @@ export class AdminTodoController {
   @ApiResponse({ status: 404, description: 'TODOが見つからない' })
   @CheckPolicy((ability) => ability.can('delete', 'Todo'))
   async remove(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIdPipe) id: ResourceId,
     @CurrentUser() user: JwtPayload,
   ): Promise<TodoResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);

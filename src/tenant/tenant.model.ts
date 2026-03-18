@@ -1,11 +1,13 @@
+import { ResourceId } from '../common/types/id.type';
+
 export class TenantModel {
-  readonly id: number;
+  readonly id: ResourceId;
   readonly name: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 
   constructor(params: {
-    id: number;
+    id: ResourceId;
     name: string;
     createdAt: Date;
     updatedAt: Date;
