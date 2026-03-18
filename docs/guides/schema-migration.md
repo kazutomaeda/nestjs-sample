@@ -220,4 +220,4 @@ Prisma Client の型が古い可能性がある。
 ```bash
 yarn prisma generate   # ホスト側
 make db-generate       # Docker 側
-```
+``` 

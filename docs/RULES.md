@@ -41,84 +41,65 @@
 
 ドメインモジュール単位のフラット構成を採用する。
 
-```
+```text
 src/
 ├── main.ts
 ├── app.module.ts
-├── auth/
+├── auth/                        認証・認可モジュール
 │   ├── auth.module.ts
-│   ├── auth.controller.ts
-│   ├── auth.usecase.ts
-│   ├── auth.validator.ts
-│   ├── auth.repository.ts
-│   ├── auth.entity.ts
+│   ├── admin/                     Admin 認証
+│   │   ├── admin-auth.controller.ts
+│   │   ├── admin-auth.usecase.ts
+│   │   ├── admin-auth.repository.ts
+│   │   └── admin-auth.validator.ts
+│   ├── user/                      User 認証
+│   │   ├── user-auth.controller.ts
+│   │   ├── user-auth.usecase.ts
+│   │   ├── user-auth.repository.ts
+│   │   └── user-auth.validator.ts
 │   ├── decorators/
 │   │   ├── public.decorator.ts
 │   │   ├── current-user.decorator.ts
 │   │   └── check-policy.decorator.ts
 │   ├── external/
-│   │   ├── jwt-auth.guard.ts
+│   │   ├── composite-auth.guard.ts  ← パスで Admin/User を振り分け
+│   │   ├── admin-auth.guard.ts
+│   │   ├── user-auth.guard.ts
 │   │   ├── policies.guard.ts
 │   │   └── casl-ability.factory.ts
-│   ├── types/
-│   │   ├── index.ts
-│   │   ├── role.type.ts
-│   │   └── jwt-payload.type.ts
-│   ├── dto/
-│   └── schema/
-├── tenant/
-│   ├── tenant.module.ts
-│   ├── tenant.controller.ts
-│   ├── tenant.usecase.ts
-│   ├── tenant.validator.ts
-│   ├── tenant.repository.ts
-│   ├── tenant.model.ts
-│   ├── tenant.entity.ts
-│   ├── dto/
-│   └── schema/
-├── user/
-│   ├── user.module.ts
-│   ├── user.controller.ts
-│   ├── user.usecase.ts
-│   ├── user.validator.ts
-│   ├── user.model.ts
-│   ├── user.entity.ts
-│   ├── external/
-│   │   └── user.repository.ts
-│   ├── dto/
-│   └── schema/
-├── todo/
+│   └── types/
+├── admin/                       Admin モデル
+│   └── admin.model.ts
+├── todo/                        ドメインモジュールの例
 │   ├── todo.module.ts
-│   ├── todo.controller.ts
-│   ├── todo.usecase.ts
+│   ├── todo.controller.ts         User 向け CRUD
+│   ├── admin-todo.controller.ts   Admin 向け CRUD
+│   ├── todo.usecase.ts            User 向け Usecase
+│   ├── admin-todo.usecase.ts      Admin 向け Usecase
 │   ├── todo.validator.ts
 │   ├── todo.model.ts
-│   ├── todo.entity.ts
 │   ├── todo.repository.ts
-│   ├── todo.usecase.spec.ts
-│   ├── todo.validator.spec.ts
 │   ├── dto/
-│   │   └── todo-response.dto.ts
 │   └── schema/
-│       ├── create-todo.schema.ts
-│       ├── create-todo.schema.spec.ts
-│       ├── update-todo.schema.ts
-│       ├── update-todo.schema.spec.ts
-│       └── index.ts
 ├── tag/
-│   ├── tag.module.ts
 │   ├── ...
-│   └── external/           ← 他モジュールに公開するもの
+│   └── external/              ← 他モジュールに公開するもの
 │       ├── tag.repository.ts
 │       └── tag-resolve.service.ts
-├── health/
-│   ├── health.module.ts
-│   ├── health.controller.ts
-│   └── prisma-health.indicator.ts
-└── common/
-    ├── filters/
-    ├── pipes/
-    └── schema/
+├── audit-log/                   監査ログモジュール
+├── file/                        ファイルストレージモジュール
+├── mail/                        メール送信モジュール
+├── health/                      ヘルスチェックモジュール
+├── common/
+│   ├── types/
+│   │   └── id.type.ts             ResourceId / ParseIdPipe / zodId
+│   ├── filters/
+│   ├── pipes/
+│   ├── services/                  CSV・PDF エクスポート
+│   ├── dto/
+│   └── schema/
+├── config/
+└── prisma/
 ```
 
 ### 配置ルール
@@ -143,14 +124,17 @@ src/
 | 種類 | パターン | 例 |
 |------|---------|-----|
 | Module | `{name}.module.ts` | `user.module.ts` |
-| Controller | `{name}.controller.ts` | `user.controller.ts` |
-| Usecase | `{name}.usecase.ts` | `user.usecase.ts` |
+| Controller | `{name}.controller.ts` | `todo.controller.ts` |
+| Admin Controller | `admin-{name}.controller.ts` | `admin-todo.controller.ts` |
+| Usecase | `{name}.usecase.ts` | `todo.usecase.ts` |
+| Admin Usecase | `admin-{name}.usecase.ts` | `admin-todo.usecase.ts` |
 | Service | `{name}.service.ts` | `user.service.ts` |
 | Model | `{name}.model.ts` | `user.model.ts` |
 | Entity | `{name}.entity.ts` | `user.entity.ts` |
 | Repository | `{name}.repository.ts` | `user.repository.ts` |
 | Response DTO | `{name}-response.dto.ts` | `user-response.dto.ts` |
 | Zod スキーマ | `{action}-{name}.schema.ts` | `create-user.schema.ts` |
+| Admin Zod スキーマ | `admin-{action}-{name}.schema.ts` | `admin-create-todo.schema.ts` |
 | Validator | `{name}.validator.ts` | `user.validator.ts` |
 | Guard | `{name}.guard.ts` | `jwt-auth.guard.ts` |
 | Interceptor | `{name}.interceptor.ts` | `logging.interceptor.ts` |
@@ -495,6 +479,26 @@ describe('TodoValidator', () => {
 ### 書かないこと
 
 - バリデーション / 処理の流れの制御 / HTTP の関心事
+- **権限や認証テーブルへの依存** — Service の関数は認証の口（Admin / User）に依存しない純粋なロジックであるべき
+
+### Admin / User で振る舞いが異なる場合
+
+Service の関数内で `actorType` や `role` を見て if 分岐するのは **禁止**。
+認証の口が異なることで振る舞いが変わるなら、**関数を分ける**。
+
+```typescript
+// OK: 関数を分ける
+async notifyUser(userId: ResourceId, message: string): Promise<void> { ... }
+async notifyTenantAdmins(tenantId: ResourceId, message: string): Promise<void> { ... }
+
+// NG: if 分岐で認証種別を判定
+async notify(actor: JwtPayload, message: string): Promise<void> {
+  if (actor.type === 'admin') { ... }
+  else { ... }
+}
+```
+
+認証の口の違いは Controller → Usecase で吸収する。Service はどちらから呼ばれても同じインターフェースで動くように設計する。
 
 ### 注入できるもの
 
@@ -548,6 +552,7 @@ export class TagResolveService {
 - **ビジネスの関心事を表すデータ構造**
 - `readonly` フィールド + constructor（不変性を保証）
 - `withUpdate` 等の immutable 更新メソッド（更新が必要な場合）
+- `toAuditSnapshot()` — 監査ログ用のスナップショットを返す（追跡対象のフィールドのみ）
 - リレーションは optional フィールドで定義（`tags?: TagModel[]`）
 
 ### 書かないこと
@@ -560,38 +565,32 @@ export class TagResolveService {
 ### 実装例
 
 ```typescript
+import { ResourceId } from '../common/types/id.type';
+
 export class TodoModel {
-  readonly id: number;
+  readonly id: ResourceId;
+  readonly tenantId: ResourceId;
   readonly title: string;
   readonly completed: boolean;
   readonly createdAt: Date;
   readonly updatedAt: Date;
   readonly tags?: TagModel[];
 
-  constructor(params: {
-    id: number;
-    title: string;
-    completed: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-    tags?: TagModel[];
-  }) {
-    this.id = params.id;
-    this.title = params.title;
-    this.completed = params.completed;
-    this.createdAt = params.createdAt;
-    this.updatedAt = params.updatedAt;
-    this.tags = params.tags;
+  constructor(params: { /* 同上 */ }) { /* ... */ }
+
+  toAuditSnapshot(): Record<string, unknown> {
+    return {
+      id: this.id,
+      title: this.title,
+      completed: this.completed,
+    };
   }
 
   withUpdate(title?: string, completed?: boolean): TodoModel {
     return new TodoModel({
-      id: this.id,
+      ...this,
       title: title ?? this.title,
       completed: completed ?? this.completed,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
-      tags: this.tags,
     });
   }
 }
@@ -1116,17 +1115,142 @@ export function validate(config: Record<string, unknown>) {
 
 ## 新規ドメイン追加チェックリスト
 
-1. **Entity** - `src/{name}/{name}.entity.ts`
-2. **Model** - `src/{name}/{name}.model.ts`
-3. **Repository** - `src/{name}/{name}.repository.ts`（公開する場合は `external/`）
-4. **Zod スキーマ** - `src/{name}/schema/` に作成、`index.ts` で再 export、各フィールドに `.openapi()` を付与
-5. **Response DTO** - `src/{name}/dto/{name}-response.dto.ts`
-6. **Validator** - `src/{name}/{name}.validator.ts`（必要な場合）
-7. **Service** - `src/{name}/{name}.service.ts`（計算・加工ロジックがある場合、`external/` に配置）
-8. **Usecase** - `src/{name}/{name}.usecase.ts`
-9. **Controller** - `src/{name}/{name}.controller.ts`、`@ApiBody({ schema: createApiBodySchema(...) })` を付与
+1. **Model** - `src/{name}/{name}.model.ts`（`ResourceId` 型、`toAuditSnapshot()`、`withUpdate()` を含む）
+2. **Repository** - `src/{name}/{name}.repository.ts`（公開する場合は `external/`）
+3. **Zod スキーマ** - `src/{name}/schema/` に作成、`index.ts` で再 export、各フィールドに `.openapi()` を付与
+4. **Response DTO** - `src/{name}/dto/{name}-response.dto.ts`
+5. **Validator** - `src/{name}/{name}.validator.ts`
+6. **Usecase** - `src/{name}/{name}.usecase.ts`（監査ログ記録を含む）
+7. **Admin Usecase** - `src/{name}/admin-{name}.usecase.ts`（監査ログ記録を含む）
+8. **Controller** - `src/{name}/{name}.controller.ts`（User 向け）
+9. **Admin Controller** - `src/{name}/admin-{name}.controller.ts`（Admin 向け、`/admin/{name}s`）
 10. **Module** - `src/{name}/{name}.module.ts`、`AppModule` に登録
-11. **テスト** - `*.spec.ts`（Usecase, Validator, Schema は必須）
+11. **CASL** - `casl-ability.factory.ts` に Subject と権限を追加
+12. **テスト** - `*.spec.ts`（Usecase, Validator, Schema は必須）
+
+> scaffold（`yarn scaffold --name {name} --fields "..."`）を使えば上記の大半が自動生成される。
+
+---
+
+## ID 型
+
+すべての ID（主キー、FK、パスパラメータ）は `ResourceId` 型を使う。`number` を直接使わない。
+
+### 定義
+
+```typescript
+// src/common/types/id.type.ts
+import { ParseIntPipe } from '@nestjs/common';
+import { z } from 'zod';
+
+export type ResourceId = number;
+export const ParseIdPipe = ParseIntPipe;
+export const zodId = () => z.coerce.number().int().positive();
+```
+
+### 使い方
+
+| 場所 | 使うもの |
+|------|---------|
+| Model / DTO のフィールド | `ResourceId` |
+| Controller のパスパラメータ | `@Param('id', ParseIdPipe) id: ResourceId` |
+| Usecase / Repository のメソッド引数 | `id: ResourceId` |
+| Zod スキーマの ID フィールド | `zodId()` |
+
+### ルール
+
+- `number` や `ParseIntPipe` を直接使わない。必ず `ResourceId` / `ParseIdPipe` / `zodId()` を経由する
+- 将来 UUID / ULID に移行する場合、`id.type.ts` の1ファイルだけ変更すればよい
+
+---
+
+## 論理削除
+
+### デフォルトは論理削除
+
+scaffold で生成されるコードはデフォルトで論理削除（`deletedAt` カラム）を使う。
+
+- Prisma スキーマに `deletedAt DateTime?` を定義
+- Repository の読み取りクエリに `deletedAt: null` を WHERE 条件に含める
+- Repository の `delete` メソッドは `update({ deletedAt: new Date() })` を実行する
+- Model には `deletedAt` を含めない（ビジネスに不要な DB 固有カラム）
+
+### 物理削除にする場合
+
+scaffold で `--hardDelete` フラグを指定する。
+
+```bash
+yarn scaffold --name product --fields "name:string" --hardDelete
+```
+
+---
+
+## 監査ログ
+
+### ルール
+
+- **create / update / delete を行う Usecase は、監査ログの記録を必須とする**
+- 監査ログはトランザクション内で記録する（`tx` を渡す）
+- Model に `toAuditSnapshot()` を実装し、追跡対象のフィールドのみ返す
+
+### 操作者の記録
+
+ポリモーフィックな `actorType` + `actorId` で操作者を追跡する。
+
+| actorType | actorId | 呼び出し元 |
+|-----------|---------|-----------|
+| `'user'` | ユーザー ID | User 向け Usecase |
+| `'admin'` | 管理者 ID | Admin 向け Usecase |
+
+### before / after の規約
+
+| 操作 | before | after |
+|------|--------|-------|
+| create | `null` | `model.toAuditSnapshot()` |
+| update | `original.toAuditSnapshot()` | `updated.toAuditSnapshot()` |
+| delete | `model.toAuditSnapshot()` | `null` |
+
+### 実装パターン
+
+```typescript
+await this.auditLogRepository.create(
+  {
+    tenantId,
+    actorType: 'user',
+    actorId: userId,
+    action: 'create',
+    resourceType: 'Todo',
+    resourceId: todo.id,
+    before: null,
+    after: todo.toAuditSnapshot(),
+  },
+  tx,
+);
+```
+
+---
+
+## Admin / User コントローラー分離
+
+### 構造
+
+各ドメインモジュールは、User 向けと Admin 向けの Controller / Usecase を分離する。
+
+| ファイル | ルートプレフィックス | JWT 型 |
+|---------|-------------------|--------|
+| `{name}.controller.ts` | `/{name}s` | `UserJwtPayload` |
+| `admin-{name}.controller.ts` | `/admin/{name}s` | `JwtPayload` |
+| `{name}.usecase.ts` | — | `actorType: 'user'` |
+| `admin-{name}.usecase.ts` | — | `actorType: 'admin'` |
+
+### ルール
+
+- Admin Controller は `/admin/` プレフィックスを付ける
+- Admin Usecase は `actorType: 'admin'` で監査ログを記録する
+- Admin は任意のテナントのリソースを操作できるため、`tenantId` をリクエストボディから受け取る
+- User は `user.tenantId` を使い、リクエストから `tenantId` を受け取らない
+- Repository / Validator / Service は Admin / User で共有する（分離しない）
+- **Service の関数内で `actorType` や `role` を見て分岐するのは禁止** — 認証の口の違いは Controller → Usecase で吸収する
 
 ---
 
@@ -1148,96 +1272,84 @@ export function validate(config: Record<string, unknown>) {
 
 ## 認証
 
-### 方式
+### Admin / User 分離
 
-JWT トークンを httpOnly Cookie で管理する。Bearer ヘッダは使用しない。
-
-| トークン | Cookie 名 | 有効期限 | path | 保存先 |
-|---------|-----------|---------|------|--------|
-| Access Token | `access_token` | 15 分 | `/`（デフォルト） | Cookie のみ（DB 保存なし） |
-| Refresh Token | `refresh_token` | 7 日 | `/auth` | Cookie + DB（RefreshTokens テーブル） |
-
-### Cookie 設定
-
-```typescript
-{
-  httpOnly: true,          // JS からアクセス不可
-  secure: isProduction,    // 本番では HTTPS 必須
-  sameSite: 'strict',      // CSRF 防止
-}
-```
+Admin（システム管理者）と User（テナントユーザー）の認証は完全に分離されている。
+テーブル・JWT・Cookie・Guard・Controller すべてが別系統。
 
 ### グローバル認証ガード
 
-`JwtAuthGuard` を `main.ts` でグローバルガードとして登録する。全エンドポイントに認証を強制し、認証不要なエンドポイントには `@Public()` デコレータで除外する。
+`CompositeAuthGuard` を `main.ts` でグローバルガードとして登録する。パスで振り分ける。
+
+```text
+リクエスト
+  └─ CompositeAuthGuard
+       ├─ /admin/* → AdminAuthGuard → admin_access_token Cookie を検証
+       └─ それ以外 → UserAuthGuard  → user_access_token Cookie を検証
+```
+
+認証不要なエンドポイントには `@Public()` デコレータで除外する。
+
+### JWT Payload
 
 ```typescript
-// main.ts
-const jwtAuthGuard = app.get(JwtAuthGuard);
-app.useGlobalGuards(jwtAuthGuard);
-
-// 認証不要にする場合
-@Public()
-@Post('login')
-async login() { ... }
-```
-
-### 認証フロー
-
-```
-[ログイン]
-  Client → POST /auth/login (email, password)
-  Server → bcrypt.compare でパスワード検証
-         → Access Token (JWT) + Refresh Token (ランダム文字列) 生成
-         → Cookie にセット + Refresh Token を DB に保存
-  Client ← Set-Cookie: access_token, refresh_token
-
-[認証付きリクエスト]
-  Client → GET /todos (Cookie: access_token=xxx)
-  JwtAuthGuard → Cookie から access_token を取得 → JWT 検証
-               → request.user に JwtPayload をセット
-
-[トークンリフレッシュ]
-  Client → POST /auth/refresh (Cookie: refresh_token=xxx)
-  Server → DB でリフレッシュトークン検証 → 古いトークン削除
-         → 新しい Access Token + Refresh Token 生成（トークンローテーション）
-
-[ログアウト]
-  Client → POST /auth/logout
-  Server → DB からリフレッシュトークン削除 → Cookie クリア
-```
-
-### JwtPayload
-
-JWT に含まれるペイロード。`@CurrentUser()` デコレータで取得できる。
-
-```typescript
-interface JwtPayload {
-  sub: number;              // ユーザー ID
-  tenantId: number | null;  // テナント ID（system_admin は null）
-  role: Role;               // 'system_admin' | 'tenant_admin' | 'tenant_user'
+// Admin
+interface AdminJwtPayload {
+  type: 'admin';
+  sub: number;       // admin.id
 }
+
+// User
+interface UserJwtPayload {
+  type: 'user';
+  sub: number;       // user.id
+  tenantId: number;  // 所属テナント（必須）
+  role: UserRole;    // 'tenant_admin' | 'tenant_user'
+}
+
+type JwtPayload = AdminJwtPayload | UserJwtPayload;
 ```
 
-### パスワードリセット
+### Cookie 構成
 
-1. `POST /auth/password-reset/request` でリセットトークンを生成（ユーザーが存在しなくても 200 を返す — ユーザー列挙防止）
-2. `POST /auth/password-reset/confirm` でトークン + 新パスワードを送信
-3. パスワード変更時、そのユーザーの全リフレッシュトークンを削除（全セッション無効化）
+| Cookie 名 | 用途 | 有効期限 | path |
+|-----------|------|---------|------|
+| `admin_access_token` | Admin アクセストークン | 15 分 | `/` |
+| `admin_refresh_token` | Admin リフレッシュトークン | 7 日 | `/admin/auth` |
+| `user_access_token` | User アクセストークン | 15 分 | `/` |
+| `user_refresh_token` | User リフレッシュトークン | 7 日 | `/auth` |
+
+すべて `httpOnly: true`、`sameSite: 'strict'`。本番環境では `secure: true`。
+
+### DB テーブル
+
+Admin と User は完全に別テーブル。
+
+```text
+Admin               ← システム管理者（tenantId なし）
+AdminRefreshToken
+AdminPasswordReset
+
+User                ← テナントユーザー（tenantId 必須）
+UserRefreshToken
+UserPasswordReset
+```
 
 ### 認証に関するファイル配置
 
 | ファイル | 責務 |
 |---------|------|
-| `auth/auth.controller.ts` | 認証エンドポイント (login, logout, refresh, me, password-reset) |
-| `auth/auth.usecase.ts` | 認証ビジネスロジック |
-| `auth/auth.repository.ts` | User / RefreshToken / PasswordReset の DB アクセス |
-| `auth/auth.validator.ts` | 認証バリデーション (ensureUserExists, ensureRefreshTokenValid 等) |
-| `auth/external/jwt-auth.guard.ts` | グローバル認証ガード（Cookie から JWT を検証） |
+| `auth/admin/admin-auth.controller.ts` | Admin 認証エンドポイント (`/admin/auth`) |
+| `auth/admin/admin-auth.usecase.ts` | Admin 認証ロジック |
+| `auth/admin/admin-auth.repository.ts` | Admin / AdminRefreshToken / AdminPasswordReset の DB アクセス |
+| `auth/user/user-auth.controller.ts` | User 認証エンドポイント (`/auth`) |
+| `auth/user/user-auth.usecase.ts` | User 認証ロジック |
+| `auth/user/user-auth.repository.ts` | User / UserRefreshToken / UserPasswordReset の DB アクセス |
+| `auth/external/composite-auth.guard.ts` | パスベースの認証ガード振り分け |
+| `auth/external/admin-auth.guard.ts` | Admin 認証ガード |
+| `auth/external/user-auth.guard.ts` | User 認証ガード |
 | `auth/decorators/public.decorator.ts` | `@Public()` — 認証不要マーク |
 | `auth/decorators/current-user.decorator.ts` | `@CurrentUser()` — JWT ペイロード取得 |
-| `auth/types/jwt-payload.type.ts` | JwtPayload 型定義 |
-| `auth/types/role.type.ts` | Role 型定義 (`system_admin`, `tenant_admin`, `tenant_user`) |
 
 ### ルール
 
@@ -1246,7 +1358,8 @@ interface JwtPayload {
 - **トークンリフレッシュ時は古いトークンを削除して新しいトークンを発行する**（トークンローテーション）
 - **パスワード変更時は全リフレッシュトークンを削除する**
 - **ユーザー列挙を防止する**: パスワードリセット要求は、ユーザーが存在しなくても成功レスポンスを返す
-- `auth/auth.repository.ts` は Auth モジュール内部でのみ使用する（export しない）
+- Admin の Cookie で User のエンドポイントにはアクセスできない（逆も同様）
+- `auth/admin/` と `auth/user/` の Repository は Auth モジュール内部でのみ使用する（export しない）
 
 ---
 
@@ -1258,17 +1371,17 @@ interface JwtPayload {
 
 ### アビリティ定義
 
-`CaslAbilityFactory.createForUser(user)` でロールに応じたアビリティを生成する。
+`CaslAbilityFactory.createForUser(user)` で JWT Payload に応じたアビリティを生成する。
 
 | ロール | リソース | 権限 | 条件 |
 |--------|---------|------|------|
-| `system_admin` | all | manage | なし（全操作可能） |
-| `tenant_admin` | Todo | manage | `tenantId = user.tenantId` |
-| `tenant_admin` | Tag | manage | `tenantId = user.tenantId` |
-| `tenant_admin` | User | manage | `tenantId = user.tenantId` |
+| Admin | all | manage | なし（全操作可能） |
+| `tenant_admin` | Todo, Tag, File, User | manage | `tenantId = user.tenantId` |
+| `tenant_admin` | AuditLog | read | `tenantId = user.tenantId` |
 | `tenant_admin` | Tenant | read, update | `id = user.tenantId` |
 | `tenant_user` | Todo | read, create, update | `tenantId = user.tenantId` |
 | `tenant_user` | Tag | read | `tenantId = user.tenantId` |
+| `tenant_user` | File | read, create, update | `tenantId = user.tenantId` |
 | `tenant_user` | User | read, update | 自分自身のみ (`id = user.sub`) |
 
 ### 使い方
@@ -1333,17 +1446,25 @@ async findAll(ability: AppAbility): Promise<TodoModel[]> {
 
 ### テナントスキーマ
 
-```
+```text
 Tenants
 ├── id (PK, autoincrement)
 ├── name
 ├── created_at
 └── updated_at
 
-Users
+Admins                              ← システム管理者（テナントに属さない）
 ├── id (PK, autoincrement)
-├── tenant_id (FK → Tenants.id, nullable)  ← system_admin は null
-├── role ('system_admin' | 'tenant_admin' | 'tenant_user')
+├── email (unique)
+├── password_hash
+├── name
+├── created_at
+└── updated_at
+
+Users                               ← テナントユーザー
+├── id (PK, autoincrement)
+├── tenant_id (FK → Tenants.id)     ← 必須（null 不可）
+├── role ('tenant_admin' | 'tenant_user')
 ├── email (unique)
 ├── password_hash
 ├── name
@@ -1384,8 +1505,9 @@ async create(input: CreateTenantInput): Promise<TenantModel> {
 ### ルール
 
 - **`tenantId` による手動フィルタリング (`where: { tenantId }`) は禁止** — CASL の `accessibleBy` を使う
-- `system_admin` の `tenantId` は `null`。CASL で `can('manage', 'all')` を設定するため、全テナントのデータにアクセスできる
-- テナント作成は `system_admin` のみ可能
+- Admin は `Admins` テーブルに保存され、テナントに属さない。CASL で `can('manage', 'all')` を設定するため、全テナントのデータにアクセスできる
+- User は必ずテナントに属する（`tenantId` は必須）
+- テナント作成は Admin のみ可能
 - テナント削除時の関連データ（User, Todo, Tag 等）のカスケード削除は DB 制約に委ねる
 
 ---
@@ -1399,9 +1521,9 @@ async create(input: CreateTenantInput): Promise<TenantModel> {
 | 対象 | リクエスト上限 | 期間 |
 |------|-------------|------|
 | 全エンドポイント（グローバル） | 100 | 60 秒 |
-| `POST /auth/login` | 5 | 60 秒 |
-| `POST /auth/password-reset/request` | 3 | 60 秒 |
-| `POST /auth/password-reset/confirm` | 5 | 60 秒 |
+| ログイン（`/admin/auth/login`, `/auth/login`） | 5 | 60 秒 |
+| パスワードリセット要求 | 3 | 60 秒 |
+| パスワードリセット実行 | 5 | 60 秒 |
 
 ### 登録方法
 
