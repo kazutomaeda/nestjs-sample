@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createTransport, Transporter } from 'nodemailer';
+import { MAIL_TRANSPORT, MailTransport } from '../mail-transport.interface';
 
 export interface SendMailOptions {
   to: string;
@@ -10,29 +10,20 @@ export interface SendMailOptions {
 
 @Injectable()
 export class MailService {
-  private readonly transporter: Transporter;
   private readonly from: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    @Inject(MAIL_TRANSPORT) private readonly transport: MailTransport,
+  ) {
     this.from = this.configService.get<string>(
       'SMTP_FROM',
       'noreply@example.com',
     );
-
-    const host = this.configService.get<string>('SMTP_HOST', 'localhost');
-    const port = this.configService.get<number>('SMTP_PORT', 1025);
-    const user = this.configService.get<string>('SMTP_USER');
-    const pass = this.configService.get<string>('SMTP_PASS');
-
-    this.transporter = createTransport({
-      host,
-      port,
-      ...(user && pass ? { auth: { user, pass } } : {}),
-    });
   }
 
   async send(options: SendMailOptions): Promise<void> {
-    await this.transporter.sendMail({
+    await this.transport.sendMail({
       from: this.from,
       to: options.to,
       subject: options.subject,
