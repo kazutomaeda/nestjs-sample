@@ -5,11 +5,7 @@ import { AuditLogRepository } from '../audit-log/external/audit-log.repository';
 import { TodoRepository, FindAllQuery } from './todo.repository';
 import { TodoModel } from './todo.model';
 import { TodoValidator } from './todo.validator';
-import {
-  AdminCreateTodoInput,
-  UpdateTodoInput,
-  ListTodoInput,
-} from './schema';
+import { AdminCreateTodoInput, UpdateTodoInput, ListTodoInput } from './schema';
 import { AppAbility } from '../auth/external/casl-ability.factory';
 
 @Injectable()
@@ -50,7 +46,11 @@ export class AdminTodoUsecase {
   ): Promise<TodoModel> {
     return this.transaction.run(async (tx) => {
       const tagIds = input.tags
-        ? await this.tagResolveService.resolveTagIds(input.tags, input.tenantId, tx)
+        ? await this.tagResolveService.resolveTagIds(
+            input.tags,
+            input.tenantId,
+            tx,
+          )
         : undefined;
       const todo = await this.repository.create(
         { tenantId: input.tenantId, title: input.title, tagIds },
@@ -88,7 +88,11 @@ export class AdminTodoUsecase {
 
     return this.transaction.run(async (tx) => {
       const tagIds = input.tags
-        ? await this.tagResolveService.resolveTagIds(input.tags, todo.tenantId, tx)
+        ? await this.tagResolveService.resolveTagIds(
+            input.tags,
+            todo.tenantId,
+            tx,
+          )
         : undefined;
       const result = await this.repository.update(id, updated, tagIds, tx);
       await this.auditLogRepository.create(

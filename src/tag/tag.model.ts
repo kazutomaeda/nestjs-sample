@@ -19,6 +19,13 @@ export class TagModel {
     this.updatedAt = params.updatedAt;
   }
 
+  toAuditSnapshot(): Record<string, unknown> {
+    return {
+      id: this.id,
+      name: this.name,
+    };
+  }
+
   withUpdate(name?: string): TagModel {
     return new TagModel({
       id: this.id,

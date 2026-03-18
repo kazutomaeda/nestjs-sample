@@ -223,6 +223,7 @@ export class TodoController {
       updatedAt: model.updatedAt,
       tags: (model.tags ?? []).map((tag) => ({
         id: tag.id,
+        tenantId: tag.tenantId,
         name: tag.name,
         createdAt: tag.createdAt,
         updatedAt: tag.updatedAt,

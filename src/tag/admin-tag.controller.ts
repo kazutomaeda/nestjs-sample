@@ -10,123 +10,114 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { TagUsecase } from './tag.usecase';
+import { AdminTagUsecase } from './admin-tag.usecase';
 import { TagModel } from './tag.model';
 import { TagResponseDto } from './dto/tag-response.dto';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import {
-  createTagSchema,
-  CreateTagInput,
+  adminCreateTagSchema,
+  AdminCreateTagInput,
   updateTagSchema,
   UpdateTagInput,
 } from './schema';
 import { createApiBodySchema } from '../common/schema';
-import { PoliciesGuard } from '../auth/external/policies.guard';
-import { CheckPolicy } from '../auth/decorators/check-policy.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import {
-  CaslAbilityFactory,
-  AppAbility,
-} from '../auth/external/casl-ability.factory';
-import { UserJwtPayload } from '../auth/types';
+import { CheckPolicy } from '../auth/decorators/check-policy.decorator';
+import { PoliciesGuard } from '../auth/external/policies.guard';
+import { CaslAbilityFactory } from '../auth/external/casl-ability.factory';
+import { JwtPayload } from '../auth/types';
 
-@Controller('tags')
-@ApiTags('tags')
+@Controller('admin/tags')
+@ApiTags('admin/tags')
 @UseGuards(PoliciesGuard)
-export class TagController {
+export class AdminTagController {
   constructor(
-    private readonly tagUsecase: TagUsecase,
+    private readonly adminTagUsecase: AdminTagUsecase,
     private readonly caslAbilityFactory: CaslAbilityFactory,
   ) {}
 
-  private getAbility(user: UserJwtPayload): AppAbility {
-    return this.caslAbilityFactory.createForUser(user);
-  }
-
   @Get()
-  @CheckPolicy((ability) => ability.can('read', 'Tag'))
   @ApiResponse({
     status: 200,
-    description: 'タグ一覧取得',
+    description: 'タグ一覧取得（管理者）',
     type: [TagResponseDto],
   })
-  async findAll(
-    @CurrentUser() user: UserJwtPayload,
-  ): Promise<TagResponseDto[]> {
-    const ability = this.getAbility(user);
-    const tags = await this.tagUsecase.findAll(ability);
+  @CheckPolicy((ability) => ability.can('read', 'Tag'))
+  async findAll(@CurrentUser() user: JwtPayload): Promise<TagResponseDto[]> {
+    const ability = this.caslAbilityFactory.createForUser(user);
+    const tags = await this.adminTagUsecase.findAll(ability);
     return tags.map((tag) => this.toResponse(tag));
   }
 
   @Get(':id')
-  @CheckPolicy((ability) => ability.can('read', 'Tag'))
   @ApiResponse({
     status: 200,
-    description: 'タグ詳細取得',
+    description: 'タグ詳細取得（管理者）',
     type: TagResponseDto,
   })
   @ApiResponse({ status: 404, description: 'タグが見つからない' })
+  @CheckPolicy((ability) => ability.can('read', 'Tag'))
   async findOne(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: UserJwtPayload,
+    @CurrentUser() user: JwtPayload,
   ): Promise<TagResponseDto> {
-    const ability = this.getAbility(user);
-    const tag = await this.tagUsecase.findOne(id, ability);
+    const ability = this.caslAbilityFactory.createForUser(user);
+    const tag = await this.adminTagUsecase.findOne(id, ability);
     return this.toResponse(tag);
   }
 
   @Post()
-  @CheckPolicy((ability) => ability.can('create', 'Tag'))
-  @ApiBody({ schema: createApiBodySchema(createTagSchema) })
+  @ApiBody({ schema: createApiBodySchema(adminCreateTagSchema) })
   @ApiResponse({
     status: 201,
-    description: 'タグ作成成功',
+    description: 'タグ作成成功（管理者）',
     type: TagResponseDto,
   })
   @ApiResponse({ status: 400, description: 'バリデーションエラー' })
   @ApiResponse({ status: 409, description: 'タグ名が重複' })
+  @CheckPolicy((ability) => ability.can('create', 'Tag'))
   async create(
-    @Body(new ZodValidationPipe(createTagSchema)) dto: CreateTagInput,
-    @CurrentUser() user: UserJwtPayload,
+    @Body(new ZodValidationPipe(adminCreateTagSchema)) dto: AdminCreateTagInput,
+    @CurrentUser() user: JwtPayload,
   ): Promise<TagResponseDto> {
-    const tag = await this.tagUsecase.create(dto, user.tenantId!);
+    const tag = await this.adminTagUsecase.create(dto, user.sub);
     return this.toResponse(tag);
   }
 
   @Patch(':id')
-  @CheckPolicy((ability) => ability.can('update', 'Tag'))
   @ApiBody({ schema: createApiBodySchema(updateTagSchema) })
   @ApiResponse({
     status: 200,
-    description: 'タグ更新成功',
+    description: 'タグ更新成功（管理者）',
     type: TagResponseDto,
   })
   @ApiResponse({ status: 404, description: 'タグが見つからない' })
   @ApiResponse({ status: 409, description: 'タグ名が重複' })
+  @CheckPolicy((ability) => ability.can('update', 'Tag'))
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(updateTagSchema)) dto: UpdateTagInput,
-    @CurrentUser() user: UserJwtPayload,
+    @CurrentUser() user: JwtPayload,
   ): Promise<TagResponseDto> {
-    const ability = this.getAbility(user);
-    const tag = await this.tagUsecase.update(id, dto, user.tenantId!, ability);
+    const ability = this.caslAbilityFactory.createForUser(user);
+    const tag = await this.adminTagUsecase.update(id, dto, user.sub, ability);
     return this.toResponse(tag);
   }
 
   @Delete(':id')
-  @CheckPolicy((ability) => ability.can('delete', 'Tag'))
   @ApiResponse({
     status: 200,
-    description: 'タグ削除成功',
+    description: 'タグ削除成功（管理者）',
     type: TagResponseDto,
   })
   @ApiResponse({ status: 404, description: 'タグが見つからない' })
+  @CheckPolicy((ability) => ability.can('delete', 'Tag'))
   async remove(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: UserJwtPayload,
+    @CurrentUser() user: JwtPayload,
   ): Promise<TagResponseDto> {
-    const ability = this.getAbility(user);
-    const tag = await this.tagUsecase.remove(id, ability);
+    const ability = this.caslAbilityFactory.createForUser(user);
+    const tag = await this.adminTagUsecase.remove(id, user.sub, ability);
     return this.toResponse(tag);
   }
 

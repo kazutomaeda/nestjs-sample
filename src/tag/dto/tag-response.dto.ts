@@ -2,6 +2,9 @@ export class TagResponseDto {
   /** タグ ID */
   id: number;
 
+  /** テナントID */
+  tenantId: number;
+
   /** タグ名 */
   name: string;
 

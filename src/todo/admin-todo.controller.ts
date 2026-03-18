@@ -93,7 +93,8 @@ export class AdminTodoController {
   @ApiResponse({ status: 400, description: 'バリデーションエラー' })
   @CheckPolicy((ability) => ability.can('create', 'Todo'))
   async create(
-    @Body(new ZodValidationPipe(adminCreateTodoSchema)) dto: AdminCreateTodoInput,
+    @Body(new ZodValidationPipe(adminCreateTodoSchema))
+    dto: AdminCreateTodoInput,
     @CurrentUser() user: JwtPayload,
   ): Promise<TodoResponseDto> {
     const todo = await this.adminTodoUsecase.create(dto, user.sub);
@@ -146,6 +147,7 @@ export class AdminTodoController {
       updatedAt: model.updatedAt,
       tags: (model.tags ?? []).map((tag) => ({
         id: tag.id,
+        tenantId: tag.tenantId,
         name: tag.name,
         createdAt: tag.createdAt,
         updatedAt: tag.updatedAt,
