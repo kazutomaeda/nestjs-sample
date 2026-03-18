@@ -1,6 +1,22 @@
-.PHONY: db-login up rebuild db-up db-push db-seed db-generate
+.PHONY: setup db-login up rebuild db-up db-push db-seed db-generate
 
 DB_PROVIDER := $(shell grep '^DATABASE_URL=' .env | head -1 | sed 's/DATABASE_URL="//' | sed 's/:.*//')
+
+# 初回セットアップ（clone 後に一度だけ実行）
+setup:
+	@test -f .env || cp .env.example .env && echo "✔ .env created"
+	docker compose up -d
+	@echo "⏳ Waiting for MySQL to be ready..."
+	@until docker compose exec mysql mysqladmin ping -uroot -ppassword --silent 2>/dev/null; do sleep 1; done
+	@echo "✔ MySQL is ready"
+	docker compose exec app yarn prisma db push
+	docker compose exec app yarn prisma generate
+	docker compose exec app yarn prisma db seed
+	@echo ""
+	@echo "✅ Setup complete!"
+	@echo "   Swagger UI: http://localhost:3002/api"
+	@echo "   Mailpit:    http://localhost:8025"
+	@echo "   MinIO:      http://localhost:9003"
 
 # Docker Compose 全サービス起動
 up:
