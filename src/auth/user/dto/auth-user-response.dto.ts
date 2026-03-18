@@ -1,14 +1,14 @@
-import { Role } from '../types';
+import { UserRole } from '../../types';
 
 export class AuthUserResponseDto {
   /** ユーザーID */
   id: number;
 
   /** テナントID */
-  tenantId: number | null;
+  tenantId: number;
 
   /** ロール */
-  role: Role;
+  role: UserRole;
 
   /** メールアドレス */
   email: string;

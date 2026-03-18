@@ -78,7 +78,8 @@ export class TodoUsecase {
       await this.auditLogRepository.create(
         {
           tenantId,
-          userId,
+          actorType: 'user',
+          actorId: userId,
           action: 'create',
           resourceType: 'Todo',
           resourceId: todo.id,
@@ -113,7 +114,8 @@ export class TodoUsecase {
       await this.auditLogRepository.create(
         {
           tenantId,
-          userId,
+          actorType: 'user',
+          actorId: userId,
           action: 'update',
           resourceType: 'Todo',
           resourceId: id,
@@ -140,7 +142,8 @@ export class TodoUsecase {
       await this.auditLogRepository.create(
         {
           tenantId: todo.tenantId,
-          userId,
+          actorType: 'user',
+          actorId: userId,
           action: 'delete',
           resourceType: 'Todo',
           resourceId: id,

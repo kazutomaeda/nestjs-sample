@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   Param,
   ParseIntPipe,
@@ -40,7 +39,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CheckPolicy } from '../auth/decorators/check-policy.decorator';
 import { PoliciesGuard } from '../auth/external/policies.guard';
 import { CaslAbilityFactory } from '../auth/external/casl-ability.factory';
-import { JwtPayload } from '../auth/types';
+import { UserJwtPayload } from '../auth/types';
 
 @Controller('todos')
 @ApiTags('todos')
@@ -61,7 +60,7 @@ export class TodoController {
   @CheckPolicy((ability) => ability.can('read', 'Todo'))
   async findAll(
     @Query(new ZodValidationPipe(listTodoSchema)) query: ListTodoInput,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<PaginatedResponseDto<TodoResponseDto>> {
     const ability = this.caslAbilityFactory.createForUser(user);
     const { items, totalItems } = await this.todoUsecase.findAll(
@@ -85,7 +84,7 @@ export class TodoController {
   @CheckPolicy((ability) => ability.can('read', 'Todo'))
   async exportCsv(
     @Query(new ZodValidationPipe(exportTodoSchema)) query: ExportTodoInput,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     const ability = this.caslAbilityFactory.createForUser(user);
@@ -104,7 +103,7 @@ export class TodoController {
   @CheckPolicy((ability) => ability.can('read', 'Todo'))
   async exportPdf(
     @Query(new ZodValidationPipe(exportTodoSchema)) query: ExportTodoInput,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     const ability = this.caslAbilityFactory.createForUser(user);
@@ -131,7 +130,7 @@ export class TodoController {
   @CheckPolicy((ability) => ability.can('read', 'Todo'))
   async findOne(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<TodoResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
     const todo = await this.todoUsecase.findOne(id, ability);
@@ -149,11 +148,8 @@ export class TodoController {
   @CheckPolicy((ability) => ability.can('create', 'Todo'))
   async create(
     @Body(new ZodValidationPipe(createTodoSchema)) dto: CreateTodoInput,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<TodoResponseDto> {
-    if (user.tenantId === null) {
-      throw new ForbiddenException('テナントに所属していません');
-    }
     const todo = await this.todoUsecase.create(dto, user.tenantId, user.sub);
     return this.toResponse(todo);
   }
@@ -170,11 +166,8 @@ export class TodoController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(updateTodoSchema)) dto: UpdateTodoInput,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<TodoResponseDto> {
-    if (user.tenantId === null) {
-      throw new ForbiddenException('テナントに所属していません');
-    }
     const ability = this.caslAbilityFactory.createForUser(user);
     const todo = await this.todoUsecase.update(
       id,
@@ -196,7 +189,7 @@ export class TodoController {
   @CheckPolicy((ability) => ability.can('delete', 'Todo'))
   async remove(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<TodoResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
     const todo = await this.todoUsecase.remove(id, user.sub, ability);
@@ -223,6 +216,7 @@ export class TodoController {
   private toResponse(model: TodoModel): TodoResponseDto {
     return {
       id: model.id,
+      tenantId: model.tenantId,
       title: model.title,
       completed: model.completed,
       createdAt: model.createdAt,

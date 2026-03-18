@@ -4,7 +4,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { TransactionClient } from '../../prisma/prisma.types';
 import { UserModel } from '../user.model';
 import { User } from '../user.entity';
-import { Role, isValidRole } from '../../auth/types';
+import { UserRole, isValidUserRole } from '../../auth/types';
 import { AppAbility } from '../../auth/external/casl-ability.factory';
 
 @Injectable()
@@ -39,7 +39,7 @@ export class UserRepository {
   async create(
     params: {
       tenantId: number;
-      role: Role;
+      role: UserRole;
       email: string;
       passwordHash: string;
       name: string;
@@ -82,7 +82,9 @@ export class UserRepository {
   }
 
   private toModel(entity: User): UserModel {
-    const role: Role = isValidRole(entity.role) ? entity.role : 'tenant_user';
+    const role: UserRole = isValidUserRole(entity.role)
+      ? entity.role
+      : 'tenant_user';
     return new UserModel({
       id: entity.id,
       tenantId: entity.tenantId,

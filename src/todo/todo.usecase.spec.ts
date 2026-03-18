@@ -9,6 +9,7 @@ import { TodoValidator } from './todo.validator';
 import { CaslAbilityFactory } from '../auth/external/casl-ability.factory';
 
 const mockAbility = new CaslAbilityFactory().createForUser({
+  type: 'user',
   sub: 1,
   tenantId: 1,
   role: 'tenant_admin',

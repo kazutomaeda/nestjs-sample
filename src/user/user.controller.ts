@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -26,7 +25,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CheckPolicy } from '../auth/decorators/check-policy.decorator';
 import { PoliciesGuard } from '../auth/external/policies.guard';
 import { CaslAbilityFactory } from '../auth/external/casl-ability.factory';
-import { JwtPayload } from '../auth/types';
+import { UserJwtPayload } from '../auth/types';
 
 @Controller('users')
 @ApiTags('users')
@@ -44,7 +43,9 @@ export class UserController {
     type: [UserResponseDto],
   })
   @CheckPolicy((ability) => ability.can('read', 'User'))
-  async findAll(@CurrentUser() user: JwtPayload): Promise<UserResponseDto[]> {
+  async findAll(
+    @CurrentUser() user: UserJwtPayload,
+  ): Promise<UserResponseDto[]> {
     const ability = this.caslAbilityFactory.createForUser(user);
     const users = await this.userUsecase.findAll(ability);
     return users.map((u) => this.toResponse(u));
@@ -60,7 +61,7 @@ export class UserController {
   @CheckPolicy((ability) => ability.can('read', 'User'))
   async findOne(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<UserResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
     const found = await this.userUsecase.findOne(id, ability);
@@ -78,12 +79,9 @@ export class UserController {
   @CheckPolicy((ability) => ability.can('create', 'User'))
   async create(
     @Body(new ZodValidationPipe(createUserSchema)) dto: CreateUserInput,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<UserResponseDto> {
     const tenantId = dto.tenantId ?? user.tenantId;
-    if (tenantId === null) {
-      throw new BadRequestException('テナントIDが指定されていません');
-    }
     const created = await this.userUsecase.create(dto, tenantId);
     return this.toResponse(created);
   }
@@ -100,7 +98,7 @@ export class UserController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(updateUserSchema)) dto: UpdateUserInput,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<UserResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
     const updated = await this.userUsecase.update(id, dto, ability);
@@ -117,7 +115,7 @@ export class UserController {
   @CheckPolicy((ability) => ability.can('delete', 'User'))
   async remove(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<UserResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
     const removed = await this.userUsecase.remove(id, user.sub, ability);

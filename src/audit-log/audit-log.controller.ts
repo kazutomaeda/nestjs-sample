@@ -17,7 +17,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CheckPolicy } from '../auth/decorators/check-policy.decorator';
 import { PoliciesGuard } from '../auth/external/policies.guard';
 import { CaslAbilityFactory } from '../auth/external/casl-ability.factory';
-import { JwtPayload } from '../auth/types';
+import { UserJwtPayload } from '../auth/types';
 
 @Controller('audit-logs')
 @ApiTags('audit-logs')
@@ -36,7 +36,7 @@ export class AuditLogController {
   @CheckPolicy((ability) => ability.can('read', 'AuditLog'))
   async findAll(
     @Query(new ZodValidationPipe(listAuditLogSchema)) query: ListAuditLogInput,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<PaginatedResponseDto<AuditLogResponseDto>> {
     const ability = this.caslAbilityFactory.createForUser(user);
     const { items, totalItems } = await this.auditLogUsecase.findAll(
@@ -64,7 +64,7 @@ export class AuditLogController {
   @CheckPolicy((ability) => ability.can('read', 'AuditLog'))
   async findOne(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<AuditLogResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
     const log = await this.auditLogUsecase.findOne(id, ability);
@@ -75,7 +75,8 @@ export class AuditLogController {
     return {
       id: model.id,
       tenantId: model.tenantId,
-      userId: model.userId,
+      actorType: model.actorType,
+      actorId: model.actorId,
       action: model.action,
       resourceType: model.resourceType,
       resourceId: model.resourceId,

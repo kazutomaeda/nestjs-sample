@@ -3,11 +3,11 @@ import {
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
-import { UserWithPasswordModel } from '../user/user.model';
-import { PasswordReset } from './auth.entity';
+import { UserWithPasswordModel } from '../../user/user.model';
+import { UserPasswordReset } from './user-auth.entity';
 
 @Injectable()
-export class AuthValidator {
+export class UserAuthValidator {
   ensureUserExists(user: UserWithPasswordModel | null): UserWithPasswordModel {
     if (!user) {
       throw new UnauthorizedException(
@@ -17,7 +17,9 @@ export class AuthValidator {
     return user;
   }
 
-  ensurePasswordResetValid(passwordReset: PasswordReset | null): PasswordReset {
+  ensurePasswordResetValid(
+    passwordReset: UserPasswordReset | null,
+  ): UserPasswordReset {
     if (!passwordReset) {
       throw new BadRequestException('無効なトークンです');
     }

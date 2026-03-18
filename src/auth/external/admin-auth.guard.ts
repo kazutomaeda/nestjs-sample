@@ -8,10 +8,10 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
-import { JwtPayload } from '../types';
+import { AdminJwtPayload } from '../types';
 
 @Injectable()
-export class JwtAuthGuard implements CanActivate {
+export class AdminAuthGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
     private readonly reflector: Reflector,
@@ -28,23 +28,22 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<Request>();
-    const token = this.extractTokenFromCookie(request);
+    const token = request.cookies?.['admin_access_token'];
 
     if (!token) {
       throw new UnauthorizedException('認証が必要です');
     }
 
     try {
-      const payload: JwtPayload = await this.jwtService.verifyAsync(token);
+      const payload: AdminJwtPayload = await this.jwtService.verifyAsync(token);
+      if (payload.type !== 'admin') {
+        throw new UnauthorizedException('管理者トークンではありません');
+      }
       request.user = payload;
     } catch {
       throw new UnauthorizedException('トークンが無効です');
     }
 
     return true;
-  }
-
-  private extractTokenFromCookie(request: Request): string | undefined {
-    return request.cookies?.['access_token'];
   }
 }

@@ -12,7 +12,6 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   Param,
   ParseIntPipe,
@@ -40,7 +39,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CheckPolicy } from '../auth/decorators/check-policy.decorator';
 import { PoliciesGuard } from '../auth/external/policies.guard';
 import { CaslAbilityFactory } from '../auth/external/casl-ability.factory';
-import { JwtPayload } from '../auth/types';
+import { UserJwtPayload } from '../auth/types';
 
 @Controller('<%= plural %>')
 @ApiTags('<%= plural %>')
@@ -59,7 +58,7 @@ export class <%= pascal %>Controller {
   @CheckPolicy((ability) => ability.can('read', '<%= pascal %>'))
   async findAll(
     @Query(new ZodValidationPipe(list<%= pascal %>Schema)) query: List<%= pascal %>Input,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<PaginatedResponseDto<<%= pascal %>ResponseDto>> {
     const ability = this.caslAbilityFactory.createForUser(user);
     const { items, totalItems } = await this.<%= camel %>Usecase.findAll(ability, query);
@@ -84,7 +83,7 @@ export class <%= pascal %>Controller {
   @CheckPolicy((ability) => ability.can('read', '<%= pascal %>'))
   async findOne(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<<%= pascal %>ResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
     const <%= camel %> = await this.<%= camel %>Usecase.findOne(id, ability);
@@ -102,11 +101,8 @@ export class <%= pascal %>Controller {
   @CheckPolicy((ability) => ability.can('create', '<%= pascal %>'))
   async create(
     @Body(new ZodValidationPipe(create<%= pascal %>Schema)) dto: Create<%= pascal %>Input,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<<%= pascal %>ResponseDto> {
-    if (user.tenantId === null) {
-      throw new ForbiddenException('テナントに所属していません');
-    }
     const <%= camel %> = await this.<%= camel %>Usecase.create(dto, user.tenantId, user.sub);
     return this.toResponse(<%= camel %>);
   }
@@ -123,11 +119,8 @@ export class <%= pascal %>Controller {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(update<%= pascal %>Schema)) dto: Update<%= pascal %>Input,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<<%= pascal %>ResponseDto> {
-    if (user.tenantId === null) {
-      throw new ForbiddenException('テナントに所属していません');
-    }
     const ability = this.caslAbilityFactory.createForUser(user);
     const <%= camel %> = await this.<%= camel %>Usecase.update(id, dto, user.tenantId, user.sub, ability);
     return this.toResponse(<%= camel %>);
@@ -143,7 +136,7 @@ export class <%= pascal %>Controller {
   @CheckPolicy((ability) => ability.can('delete', '<%= pascal %>'))
   async remove(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<<%= pascal %>ResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
     const <%= camel %> = await this.<%= camel %>Usecase.remove(id, user.sub, ability);

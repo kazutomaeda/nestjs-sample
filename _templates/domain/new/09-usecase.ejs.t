@@ -63,7 +63,8 @@ export class <%= pascal %>Usecase {
       await this.auditLogRepository.create(
         {
           tenantId,
-          userId,
+          actorType: 'user',
+          actorId: userId,
           action: 'create',
           resourceType: '<%= pascal %>',
           resourceId: <%= camel %>.id,
@@ -103,7 +104,8 @@ export class <%= pascal %>Usecase {
       await this.auditLogRepository.create(
         {
           tenantId,
-          userId,
+          actorType: 'user',
+          actorId: userId,
           action: 'update',
           resourceType: '<%= pascal %>',
           resourceId: id,
@@ -126,7 +128,8 @@ export class <%= pascal %>Usecase {
       await this.auditLogRepository.create(
         {
           tenantId: <%= camel %>.tenantId,
-          userId,
+          actorType: 'user',
+          actorId: userId,
           action: 'delete',
           resourceType: '<%= pascal %>',
           resourceId: id,

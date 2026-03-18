@@ -2,12 +2,18 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { MailModule } from '../mail/mail.module';
-import { AuthController } from './auth.controller';
-import { AuthUsecase } from './auth.usecase';
-import { AuthValidator } from './auth.validator';
-import { AuthRepository } from './auth.repository';
+import { AdminAuthController } from './admin/admin-auth.controller';
+import { AdminAuthUsecase } from './admin/admin-auth.usecase';
+import { AdminAuthValidator } from './admin/admin-auth.validator';
+import { AdminAuthRepository } from './admin/admin-auth.repository';
+import { UserAuthController } from './user/user-auth.controller';
+import { UserAuthUsecase } from './user/user-auth.usecase';
+import { UserAuthValidator } from './user/user-auth.validator';
+import { UserAuthRepository } from './user/user-auth.repository';
 import { CaslAbilityFactory } from './external/casl-ability.factory';
-import { JwtAuthGuard } from './external/jwt-auth.guard';
+import { AdminAuthGuard } from './external/admin-auth.guard';
+import { UserAuthGuard } from './external/user-auth.guard';
+import { CompositeAuthGuard } from './external/composite-auth.guard';
 import { PoliciesGuard } from './external/policies.guard';
 
 @Module({
@@ -24,15 +30,26 @@ import { PoliciesGuard } from './external/policies.guard';
       }),
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AdminAuthController, UserAuthController],
   providers: [
-    AuthUsecase,
-    AuthValidator,
-    AuthRepository,
+    AdminAuthUsecase,
+    AdminAuthValidator,
+    AdminAuthRepository,
+    UserAuthUsecase,
+    UserAuthValidator,
+    UserAuthRepository,
     CaslAbilityFactory,
-    JwtAuthGuard,
+    AdminAuthGuard,
+    UserAuthGuard,
+    CompositeAuthGuard,
     PoliciesGuard,
   ],
-  exports: [CaslAbilityFactory, JwtAuthGuard, PoliciesGuard],
+  exports: [
+    CaslAbilityFactory,
+    AdminAuthGuard,
+    UserAuthGuard,
+    CompositeAuthGuard,
+    PoliciesGuard,
+  ],
 })
 export class AuthModule {}

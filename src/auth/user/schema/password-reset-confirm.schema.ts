@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { requiredString } from '../../common/schema';
+import { requiredString } from '../../../common/schema';
 
 export const passwordResetConfirmSchema = z.object({
   token: requiredString('トークン').openapi({

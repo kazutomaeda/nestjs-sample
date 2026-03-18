@@ -16,12 +16,16 @@ export const listAuditLogSchema = paginationSchema.extend({
     .min(1)
     .optional()
     .openapi({ description: 'リソース種別でフィルタ', example: 'Todo' }),
-  userId: z.coerce
+  actorType: z
+    .enum(['admin', 'user'])
+    .optional()
+    .openapi({ description: '操作者種別でフィルタ', example: 'user' }),
+  actorId: z.coerce
     .number()
     .int()
     .positive()
     .optional()
-    .openapi({ description: '操作ユーザーIDでフィルタ', example: 1 }),
+    .openapi({ description: '操作者IDでフィルタ', example: 1 }),
 });
 
 export type ListAuditLogInput = z.infer<typeof listAuditLogSchema>;

@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { TransactionClient } from '../prisma/prisma.types';
-import { UserModel, UserWithPasswordModel } from '../user/user.model';
-import { User, RefreshToken, PasswordReset } from './auth.entity';
-import { Role, isValidRole } from './types';
+import { PrismaService } from '../../prisma/prisma.service';
+import { TransactionClient } from '../../prisma/prisma.types';
+import { UserModel, UserWithPasswordModel } from '../../user/user.model';
+import { User, UserRefreshToken, UserPasswordReset } from './user-auth.entity';
+import { UserRole, isValidUserRole } from '../types';
 
 @Injectable()
-export class AuthRepository {
+export class UserAuthRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findUserByEmail(email: string): Promise<UserWithPasswordModel | null> {
@@ -27,7 +27,7 @@ export class AuthRepository {
     params: { userId: number; token: string; expiresAt: Date },
     tx: TransactionClient,
   ): Promise<void> {
-    await tx.refreshToken.create({
+    await tx.userRefreshToken.create({
       data: {
         userId: params.userId,
         token: params.token,
@@ -36,18 +36,18 @@ export class AuthRepository {
     });
   }
 
-  async findRefreshToken(token: string): Promise<RefreshToken | null> {
-    const entity = await this.prisma.refreshToken.findUnique({
+  async findRefreshToken(token: string): Promise<UserRefreshToken | null> {
+    const entity = await this.prisma.userRefreshToken.findUnique({
       where: { token },
     });
-    return entity as RefreshToken | null;
+    return entity as UserRefreshToken | null;
   }
 
   async deleteRefreshToken(
     token: string,
     tx: TransactionClient,
   ): Promise<void> {
-    await tx.refreshToken.delete({
+    await tx.userRefreshToken.delete({
       where: { token },
     });
   }
@@ -56,7 +56,7 @@ export class AuthRepository {
     userId: number,
     tx: TransactionClient,
   ): Promise<void> {
-    await tx.refreshToken.deleteMany({
+    await tx.userRefreshToken.deleteMany({
       where: { userId },
     });
   }
@@ -65,7 +65,7 @@ export class AuthRepository {
     params: { userId: number; token: string; expiresAt: Date },
     tx: TransactionClient,
   ): Promise<void> {
-    await tx.passwordReset.create({
+    await tx.userPasswordReset.create({
       data: {
         userId: params.userId,
         token: params.token,
@@ -74,18 +74,18 @@ export class AuthRepository {
     });
   }
 
-  async findPasswordReset(token: string): Promise<PasswordReset | null> {
-    const entity = await this.prisma.passwordReset.findUnique({
+  async findPasswordReset(token: string): Promise<UserPasswordReset | null> {
+    const entity = await this.prisma.userPasswordReset.findUnique({
       where: { token },
     });
-    return entity as PasswordReset | null;
+    return entity as UserPasswordReset | null;
   }
 
   async markPasswordResetAsUsed(
     token: string,
     tx: TransactionClient,
   ): Promise<void> {
-    await tx.passwordReset.update({
+    await tx.userPasswordReset.update({
       where: { token },
       data: { usedAt: new Date() },
     });
@@ -103,7 +103,9 @@ export class AuthRepository {
   }
 
   private toUserModel(entity: User): UserModel {
-    const role: Role = isValidRole(entity.role) ? entity.role : 'tenant_user';
+    const role: UserRole = isValidUserRole(entity.role)
+      ? entity.role
+      : 'tenant_user';
     return new UserModel({
       id: entity.id,
       tenantId: entity.tenantId,
@@ -116,7 +118,9 @@ export class AuthRepository {
   }
 
   private toUserWithPasswordModel(entity: User): UserWithPasswordModel {
-    const role: Role = isValidRole(entity.role) ? entity.role : 'tenant_user';
+    const role: UserRole = isValidUserRole(entity.role)
+      ? entity.role
+      : 'tenant_user';
     return new UserWithPasswordModel({
       id: entity.id,
       tenantId: entity.tenantId,

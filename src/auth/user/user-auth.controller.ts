@@ -12,10 +12,10 @@ import { ApiTags, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { AuthUsecase } from './auth.usecase';
-import { UserModel } from '../user/user.model';
+import { UserAuthUsecase } from './user-auth.usecase';
+import { UserModel } from '../../user/user.model';
 import { AuthUserResponseDto } from './dto/auth-user-response.dto';
-import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import {
   loginSchema,
   LoginInput,
@@ -24,18 +24,18 @@ import {
   passwordResetConfirmSchema,
   PasswordResetConfirmInput,
 } from './schema';
-import { createApiBodySchema } from '../common/schema';
-import { Public } from './decorators/public.decorator';
-import { CurrentUser } from './decorators/current-user.decorator';
-import { JwtPayload } from './types';
+import { createApiBodySchema } from '../../common/schema';
+import { Public } from '../decorators/public.decorator';
+import { CurrentUser } from '../decorators/current-user.decorator';
+import { UserJwtPayload } from '../types';
 
 @Controller('auth')
 @ApiTags('auth')
-export class AuthController {
+export class UserAuthController {
   private readonly isProduction: boolean;
 
   constructor(
-    private readonly authUsecase: AuthUsecase,
+    private readonly userAuthUsecase: UserAuthUsecase,
     private readonly configService: ConfigService,
   ) {
     this.isProduction = this.configService.get('NODE_ENV') === 'production';
@@ -56,7 +56,7 @@ export class AuthController {
     @Body(new ZodValidationPipe(loginSchema)) input: LoginInput,
     @Res({ passthrough: true }) res: Response,
   ): Promise<AuthUserResponseDto> {
-    const { user, tokens } = await this.authUsecase.login(input);
+    const { user, tokens } = await this.userAuthUsecase.login(input);
 
     this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 
@@ -67,9 +67,9 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiResponse({ status: 204, description: 'ログアウト成功' })
   async logout(@Res({ passthrough: true }) res: Response): Promise<void> {
-    const refreshToken = res.req.cookies?.['refresh_token'];
+    const refreshToken = res.req.cookies?.['user_refresh_token'];
     if (refreshToken) {
-      await this.authUsecase.logout(refreshToken);
+      await this.userAuthUsecase.logout(refreshToken);
     }
 
     this.clearAuthCookies(res);
@@ -83,13 +83,13 @@ export class AuthController {
   async refresh(
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ message: string }> {
-    const refreshToken = res.req.cookies?.['refresh_token'];
+    const refreshToken = res.req.cookies?.['user_refresh_token'];
     if (!refreshToken) {
       this.clearAuthCookies(res);
       throw new UnauthorizedException('リフレッシュトークンがありません');
     }
 
-    const tokens = await this.authUsecase.refresh(refreshToken);
+    const tokens = await this.userAuthUsecase.refresh(refreshToken);
 
     this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 
@@ -103,8 +103,10 @@ export class AuthController {
     type: AuthUserResponseDto,
   })
   @ApiResponse({ status: 401, description: '認証が必要' })
-  async getMe(@CurrentUser() user: JwtPayload): Promise<AuthUserResponseDto> {
-    const userModel = await this.authUsecase.getMe(user.sub);
+  async getMe(
+    @CurrentUser() user: UserJwtPayload,
+  ): Promise<AuthUserResponseDto> {
+    const userModel = await this.userAuthUsecase.getMe(user.sub);
     return this.toResponse(userModel);
   }
 
@@ -122,7 +124,7 @@ export class AuthController {
     @Body(new ZodValidationPipe(passwordResetRequestSchema))
     input: PasswordResetRequestInput,
   ): Promise<{ message: string }> {
-    await this.authUsecase.requestPasswordReset(input);
+    await this.userAuthUsecase.requestPasswordReset(input);
     return { message: 'パスワードリセットメールを送信しました' };
   }
 
@@ -137,7 +139,7 @@ export class AuthController {
     @Body(new ZodValidationPipe(passwordResetConfirmSchema))
     input: PasswordResetConfirmInput,
   ): Promise<{ message: string }> {
-    await this.authUsecase.confirmPasswordReset(input);
+    await this.userAuthUsecase.confirmPasswordReset(input);
     return { message: 'パスワードをリセットしました' };
   }
 
@@ -162,12 +164,12 @@ export class AuthController {
       sameSite: 'strict' as const,
     };
 
-    res.cookie('access_token', accessToken, {
+    res.cookie('user_access_token', accessToken, {
       ...cookieOptions,
       maxAge: 15 * 60 * 1000, // 15分
     });
 
-    res.cookie('refresh_token', refreshToken, {
+    res.cookie('user_refresh_token', refreshToken, {
       ...cookieOptions,
       path: '/auth',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7日
@@ -175,7 +177,7 @@ export class AuthController {
   }
 
   private clearAuthCookies(res: Response): void {
-    res.clearCookie('access_token');
-    res.clearCookie('refresh_token', { path: '/auth' });
+    res.clearCookie('user_access_token');
+    res.clearCookie('user_refresh_token', { path: '/auth' });
   }
 }

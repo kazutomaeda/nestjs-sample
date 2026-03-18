@@ -5,8 +5,11 @@ export class AuditLogResponseDto {
   /** テナントID */
   tenantId: number;
 
-  /** 操作ユーザーID */
-  userId: number;
+  /** 操作者種別 ('admin' | 'user') */
+  actorType: string;
+
+  /** 操作者ID */
+  actorId: number;
 
   /** 操作種別 (create / update / delete) */
   action: string;

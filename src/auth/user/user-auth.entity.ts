@@ -1,9 +1,9 @@
-import { Role } from './types';
+import { UserRole } from '../types';
 
 export class User {
   id: number;
-  tenantId: number | null;
-  role: Role;
+  tenantId: number;
+  role: UserRole;
   email: string;
   passwordHash: string;
   name: string;
@@ -11,7 +11,7 @@ export class User {
   updatedAt: Date;
 }
 
-export class RefreshToken {
+export class UserRefreshToken {
   id: number;
   userId: number;
   token: string;
@@ -19,7 +19,7 @@ export class RefreshToken {
   createdAt: Date;
 }
 
-export class PasswordReset {
+export class UserPasswordReset {
   id: number;
   userId: number;
   token: string;

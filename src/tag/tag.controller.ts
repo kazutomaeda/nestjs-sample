@@ -28,7 +28,7 @@ import {
   CaslAbilityFactory,
   AppAbility,
 } from '../auth/external/casl-ability.factory';
-import { JwtPayload } from '../auth/types';
+import { UserJwtPayload } from '../auth/types';
 
 @Controller('tags')
 @ApiTags('tags')
@@ -39,7 +39,7 @@ export class TagController {
     private readonly caslAbilityFactory: CaslAbilityFactory,
   ) {}
 
-  private getAbility(user: JwtPayload): AppAbility {
+  private getAbility(user: UserJwtPayload): AppAbility {
     return this.caslAbilityFactory.createForUser(user);
   }
 
@@ -50,7 +50,9 @@ export class TagController {
     description: 'タグ一覧取得',
     type: [TagResponseDto],
   })
-  async findAll(@CurrentUser() user: JwtPayload): Promise<TagResponseDto[]> {
+  async findAll(
+    @CurrentUser() user: UserJwtPayload,
+  ): Promise<TagResponseDto[]> {
     const ability = this.getAbility(user);
     const tags = await this.tagUsecase.findAll(ability);
     return tags.map((tag) => this.toResponse(tag));
@@ -66,7 +68,7 @@ export class TagController {
   @ApiResponse({ status: 404, description: 'タグが見つからない' })
   async findOne(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<TagResponseDto> {
     const ability = this.getAbility(user);
     const tag = await this.tagUsecase.findOne(id, ability);
@@ -85,7 +87,7 @@ export class TagController {
   @ApiResponse({ status: 409, description: 'タグ名が重複' })
   async create(
     @Body(new ZodValidationPipe(createTagSchema)) dto: CreateTagInput,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<TagResponseDto> {
     const tag = await this.tagUsecase.create(dto, user.tenantId!);
     return this.toResponse(tag);
@@ -104,7 +106,7 @@ export class TagController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(updateTagSchema)) dto: UpdateTagInput,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<TagResponseDto> {
     const ability = this.getAbility(user);
     const tag = await this.tagUsecase.update(id, dto, user.tenantId!, ability);
@@ -121,7 +123,7 @@ export class TagController {
   @ApiResponse({ status: 404, description: 'タグが見つからない' })
   async remove(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<TagResponseDto> {
     const ability = this.getAbility(user);
     const tag = await this.tagUsecase.remove(id, ability);

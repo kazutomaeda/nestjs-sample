@@ -1,6 +1,6 @@
 export class User {
   id: number;
-  tenantId: number | null;
+  tenantId: number;
   role: string;
   email: string;
   passwordHash: string;

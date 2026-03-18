@@ -7,7 +7,7 @@ import helmet from 'helmet';
 import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { ProblemDetailsFilter } from './common/filters/problem-details.filter';
-import { JwtAuthGuard } from './auth/external/jwt-auth.guard';
+import { CompositeAuthGuard } from './auth/external/composite-auth.guard';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -20,8 +20,8 @@ async function bootstrap() {
   app.use(cookieParser());
 
   // グローバル認証ガード（@Public() で除外可能）
-  const jwtAuthGuard = app.get(JwtAuthGuard);
-  app.useGlobalGuards(jwtAuthGuard);
+  const compositeAuthGuard = app.get(CompositeAuthGuard);
+  app.useGlobalGuards(compositeAuthGuard);
 
   app.useGlobalPipes(
     new ValidationPipe({

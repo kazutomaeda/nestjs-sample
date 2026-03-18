@@ -26,7 +26,8 @@ export class AuditLogUsecase {
       sortOrder: input.sortOrder,
       action: input.action,
       resourceType: input.resourceType,
-      userId: input.userId,
+      actorType: input.actorType,
+      actorId: input.actorId,
     };
     return this.repository.findAll(ability, query);
   }

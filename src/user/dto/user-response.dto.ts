@@ -3,7 +3,7 @@ export class UserResponseDto {
   id: number;
 
   /** テナントID */
-  tenantId: number | null;
+  tenantId: number;
 
   /** ロール */
   role: string;

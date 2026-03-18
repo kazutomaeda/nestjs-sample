@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { requiredString } from '../../common/schema';
+import { requiredString } from '../../../common/schema';
 
 export const passwordResetRequestSchema = z.object({
   email: requiredString('メールアドレス')

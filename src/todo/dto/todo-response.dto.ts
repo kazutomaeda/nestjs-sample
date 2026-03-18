@@ -4,6 +4,9 @@ export class TodoResponseDto {
   /** TODO ID */
   id: number;
 
+  /** テナントID */
+  tenantId: number;
+
   /** TODOのタイトル */
   title: string;
 

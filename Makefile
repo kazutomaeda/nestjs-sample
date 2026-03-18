@@ -1,4 +1,4 @@
-.PHONY: db-login up rebuild db-up db-push db-seed
+.PHONY: db-login up rebuild db-up db-push db-seed db-generate
 
 DB_PROVIDER := $(shell grep '^DATABASE_URL=' .env | head -1 | sed 's/DATABASE_URL="//' | sed 's/:.*//')
 
@@ -17,6 +17,10 @@ db-up:
 # DB スキーマ反映
 db-push: db-up
 	docker compose run --rm --no-deps -e DATABASE_URL="mysql://root:password@mysql:3306/nestjs_sample" app yarn prisma db push
+
+# Prisma Client 再生成（スキーマ変更後に実行）
+db-generate:
+	docker compose exec app yarn prisma generate
 
 # シードデータ投入
 db-seed: db-up

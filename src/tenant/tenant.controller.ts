@@ -25,7 +25,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CheckPolicy } from '../auth/decorators/check-policy.decorator';
 import { PoliciesGuard } from '../auth/external/policies.guard';
 import { CaslAbilityFactory } from '../auth/external/casl-ability.factory';
-import { JwtPayload } from '../auth/types';
+import { UserJwtPayload } from '../auth/types';
 
 @Controller('tenants')
 @ApiTags('tenants')
@@ -43,7 +43,9 @@ export class TenantController {
     type: [TenantResponseDto],
   })
   @CheckPolicy((ability) => ability.can('read', 'Tenant'))
-  async findAll(@CurrentUser() user: JwtPayload): Promise<TenantResponseDto[]> {
+  async findAll(
+    @CurrentUser() user: UserJwtPayload,
+  ): Promise<TenantResponseDto[]> {
     const ability = this.caslAbilityFactory.createForUser(user);
     const tenants = await this.tenantUsecase.findAll(ability);
     return tenants.map((tenant) => this.toResponse(tenant));
@@ -59,7 +61,7 @@ export class TenantController {
   @CheckPolicy((ability) => ability.can('read', 'Tenant'))
   async findOne(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<TenantResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
     const tenant = await this.tenantUsecase.findOne(id, ability);
@@ -94,7 +96,7 @@ export class TenantController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(updateTenantSchema)) dto: UpdateTenantInput,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<TenantResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
     const tenant = await this.tenantUsecase.update(id, dto, ability);
@@ -111,7 +113,7 @@ export class TenantController {
   @CheckPolicy((ability) => ability.can('delete', 'Tenant'))
   async remove(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<TenantResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
     const tenant = await this.tenantUsecase.remove(id, ability);

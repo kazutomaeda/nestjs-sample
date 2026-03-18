@@ -1,7 +1,8 @@
 export class AuditLogModel {
   readonly id: number;
   readonly tenantId: number;
-  readonly userId: number;
+  readonly actorType: string;
+  readonly actorId: number;
   readonly action: string;
   readonly resourceType: string;
   readonly resourceId: number;
@@ -12,7 +13,8 @@ export class AuditLogModel {
   constructor(params: {
     id: number;
     tenantId: number;
-    userId: number;
+    actorType: string;
+    actorId: number;
     action: string;
     resourceType: string;
     resourceId: number;
@@ -22,7 +24,8 @@ export class AuditLogModel {
   }) {
     this.id = params.id;
     this.tenantId = params.tenantId;
-    this.userId = params.userId;
+    this.actorType = params.actorType;
+    this.actorId = params.actorId;
     this.action = params.action;
     this.resourceType = params.resourceType;
     this.resourceId = params.resourceId;

@@ -31,13 +31,11 @@ export class CaslAbilityFactory {
   createForUser(user: JwtPayload): AppAbility {
     const { can, build } = new AbilityBuilder<AppAbility>(createPrismaAbility);
 
-    switch (user.role) {
-      case 'system_admin':
-        can('manage', 'all');
-        break;
-
-      case 'tenant_admin':
-        if (user.tenantId !== null) {
+    if (user.type === 'admin') {
+      can('manage', 'all');
+    } else {
+      switch (user.role) {
+        case 'tenant_admin':
           can('manage', 'Todo', { tenantId: user.tenantId });
           can('manage', 'Tag', { tenantId: user.tenantId });
           can('manage', 'File', { tenantId: user.tenantId });
@@ -47,11 +45,9 @@ export class CaslAbilityFactory {
           can('manage', 'User', { tenantId: user.tenantId });
           can('read', 'Tenant', { id: user.tenantId });
           can('update', 'Tenant', { id: user.tenantId });
-        }
-        break;
+          break;
 
-      case 'tenant_user':
-        if (user.tenantId !== null) {
+        case 'tenant_user':
           can('read', 'Todo', { tenantId: user.tenantId });
           can('create', 'Todo', { tenantId: user.tenantId });
           can('update', 'Todo', { tenantId: user.tenantId });
@@ -62,8 +58,8 @@ export class CaslAbilityFactory {
           // HYGEN:CASL-USER
           can('read', 'User', { id: user.sub });
           can('update', 'User', { id: user.sub });
-        }
-        break;
+          break;
+      }
     }
 
     return build();

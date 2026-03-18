@@ -17,22 +17,21 @@ async function main() {
 
   console.log(`  Tenants: ${tenantA.name}, ${tenantB.name}`);
 
-  // ==================== ユーザー ====================
+  // ==================== 管理者（Admin テーブル） ====================
   const adminPassword = await bcrypt.hash('Admin123!', 10);
   const userPassword = await bcrypt.hash('User123!', 10);
 
-  const systemAdmin = await prisma.user.upsert({
+  const systemAdmin = await prisma.admin.upsert({
     where: { email: 'admin@system.example.com' },
     update: {},
     create: {
-      tenantId: null,
-      role: 'system_admin',
       email: 'admin@system.example.com',
       passwordHash: adminPassword,
       name: 'システム管理者',
     },
   });
 
+  // ==================== ユーザー ====================
   const tenantAAdmin = await prisma.user.upsert({
     where: { email: 'admin@tenant-a.example.com' },
     update: {},
@@ -150,11 +149,11 @@ async function main() {
   console.log('✅ Seed completed');
   console.log('');
   console.log('📋 ログイン情報:');
-  console.log('  system_admin  : admin@system.example.com   / Admin123!');
-  console.log('  tenant_admin A: admin@tenant-a.example.com / Admin123!');
-  console.log('  tenant_user A : user@tenant-a.example.com  / User123!');
-  console.log('  tenant_admin B: admin@tenant-b.example.com / Admin123!');
-  console.log('  tenant_user B : user@tenant-b.example.com  / User123!');
+  console.log('  admin         : admin@system.example.com   / Admin123!  (POST /admin/auth/login)');
+  console.log('  tenant_admin A: admin@tenant-a.example.com / Admin123!  (POST /auth/login)');
+  console.log('  tenant_user A : user@tenant-a.example.com  / User123!   (POST /auth/login)');
+  console.log('  tenant_admin B: admin@tenant-b.example.com / Admin123!  (POST /auth/login)');
+  console.log('  tenant_user B : user@tenant-b.example.com  / User123!   (POST /auth/login)');
 }
 
 main()

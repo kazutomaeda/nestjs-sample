@@ -3,12 +3,12 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { TransactionService } from '../prisma/transaction.service';
-import { AuthRepository } from './auth.repository';
-import { AuthValidator } from './auth.validator';
-import { UserModel } from '../user/user.model';
-import { JwtPayload } from './types';
-import { MailService } from '../mail/external/mail.service';
+import { TransactionService } from '../../prisma/transaction.service';
+import { UserAuthRepository } from './user-auth.repository';
+import { UserAuthValidator } from './user-auth.validator';
+import { UserModel } from '../../user/user.model';
+import { UserJwtPayload } from '../types';
+import { MailService } from '../../mail/external/mail.service';
 import {
   LoginInput,
   PasswordResetRequestInput,
@@ -21,20 +21,20 @@ interface TokenPair {
 }
 
 @Injectable()
-export class AuthUsecase {
+export class UserAuthUsecase {
   private readonly accessTokenExpiresIn: number;
   private readonly refreshTokenExpiresInDays: number;
 
   constructor(
     private readonly transaction: TransactionService,
-    private readonly repository: AuthRepository,
-    private readonly validator: AuthValidator,
+    private readonly repository: UserAuthRepository,
+    private readonly validator: UserAuthValidator,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly mailService: MailService,
   ) {
     this.accessTokenExpiresIn =
-      this.configService.get<number>('JWT_ACCESS_TOKEN_EXPIRES_IN') ?? 900; // 15分
+      this.configService.get<number>('JWT_ACCESS_TOKEN_EXPIRES_IN') ?? 900;
     this.refreshTokenExpiresInDays =
       this.configService.get<number>('JWT_REFRESH_TOKEN_EXPIRES_IN_DAYS') ?? 7;
   }
@@ -90,7 +90,6 @@ export class AuthUsecase {
       throw new UnauthorizedException('ユーザーが見つかりません');
     }
 
-    // 古いトークンを削除して新しいトークンを生成
     const tokens = await this.transaction.run(async (tx) => {
       await this.repository.deleteRefreshToken(refreshToken, tx);
       return this.generateTokensWithTx(user, tx);
@@ -110,14 +109,13 @@ export class AuthUsecase {
   async requestPasswordReset(input: PasswordResetRequestInput): Promise<void> {
     const user = await this.repository.findUserByEmail(input.email);
 
-    // ユーザーが存在しなくても成功を返す（セキュリティ上の理由）
     if (!user) {
       return;
     }
 
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 1); // 1時間有効
+    expiresAt.setHours(expiresAt.getHours() + 1);
 
     await this.transaction.run(async (tx) => {
       await this.repository.createPasswordReset(
@@ -154,7 +152,6 @@ export class AuthUsecase {
         tx,
       );
       await this.repository.markPasswordResetAsUsed(input.token, tx);
-      // すべてのリフレッシュトークンを無効化
       await this.repository.deleteAllRefreshTokensByUserId(
         passwordReset.userId,
         tx,
@@ -172,7 +169,8 @@ export class AuthUsecase {
     user: UserModel,
     tx: Parameters<Parameters<TransactionService['run']>[0]>[0],
   ): Promise<TokenPair> {
-    const payload: JwtPayload = {
+    const payload: UserJwtPayload = {
+      type: 'user',
       sub: user.id,
       tenantId: user.tenantId,
       role: user.role,

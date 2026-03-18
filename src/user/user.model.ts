@@ -1,9 +1,9 @@
-import { Role } from '../auth/types';
+import { UserRole } from '../auth/types';
 
 export class UserModel {
   readonly id: number;
-  readonly tenantId: number | null;
-  readonly role: Role;
+  readonly tenantId: number;
+  readonly role: UserRole;
   readonly email: string;
   readonly name: string;
   readonly createdAt: Date;
@@ -11,8 +11,8 @@ export class UserModel {
 
   constructor(params: {
     id: number;
-    tenantId: number | null;
-    role: Role;
+    tenantId: number;
+    role: UserRole;
     email: string;
     name: string;
     createdAt: Date;
@@ -27,7 +27,7 @@ export class UserModel {
     this.updatedAt = params.updatedAt;
   }
 
-  withUpdate(name?: string, email?: string, role?: Role): UserModel {
+  withUpdate(name?: string, email?: string, role?: UserRole): UserModel {
     return new UserModel({
       id: this.id,
       tenantId: this.tenantId,

@@ -13,12 +13,14 @@ export interface FindAllQuery {
   sortOrder: 'asc' | 'desc';
   action?: string;
   resourceType?: string;
-  userId?: number;
+  actorType?: string;
+  actorId?: number;
 }
 
 export interface CreateAuditLogParams {
   tenantId: number;
-  userId: number;
+  actorType: string;
+  actorId: number;
   action: string;
   resourceType: string;
   resourceId: number;
@@ -39,7 +41,8 @@ export class AuditLogRepository {
         accessibleBy(ability).AuditLog,
         ...(query.action ? [{ action: query.action }] : []),
         ...(query.resourceType ? [{ resourceType: query.resourceType }] : []),
-        ...(query.userId !== undefined ? [{ userId: query.userId }] : []),
+        ...(query.actorType ? [{ actorType: query.actorType }] : []),
+        ...(query.actorId !== undefined ? [{ actorId: query.actorId }] : []),
       ],
     };
 
@@ -83,7 +86,8 @@ export class AuditLogRepository {
     const entity = await tx.auditLog.create({
       data: {
         tenantId: params.tenantId,
-        userId: params.userId,
+        actorType: params.actorType,
+        actorId: params.actorId,
         action: params.action,
         resourceType: params.resourceType,
         resourceId: params.resourceId,
@@ -98,7 +102,8 @@ export class AuditLogRepository {
     return new AuditLogModel({
       id: entity.id,
       tenantId: entity.tenantId,
-      userId: entity.userId,
+      actorType: entity.actorType,
+      actorId: entity.actorId,
       action: entity.action,
       resourceType: entity.resourceType,
       resourceId: entity.resourceId,

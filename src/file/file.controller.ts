@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   Param,
   ParseIntPipe,
@@ -28,7 +27,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CheckPolicy } from '../auth/decorators/check-policy.decorator';
 import { PoliciesGuard } from '../auth/external/policies.guard';
 import { CaslAbilityFactory } from '../auth/external/casl-ability.factory';
-import { JwtPayload } from '../auth/types';
+import { UserJwtPayload } from '../auth/types';
 
 @Controller('files')
 @ApiTags('files')
@@ -49,7 +48,7 @@ export class FileController {
   @CheckPolicy((ability) => ability.can('read', 'File'))
   async findOne(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<FileResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
     const file = await this.fileUsecase.findOne(id, ability);
@@ -81,11 +80,8 @@ export class FileController {
   async upload(
     @UploadedFile() file: Express.Multer.File,
     @Body(new ZodValidationPipe(uploadFileSchema)) dto: UploadFileInput,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<FileResponseDto> {
-    if (user.tenantId === null) {
-      throw new ForbiddenException('テナントに所属していません');
-    }
     const model = await this.fileUsecase.upload(file, dto, user.tenantId);
     const url = await this.fileUsecase.getSignedUrl(model.key);
     return this.toResponse(model, url);
@@ -103,11 +99,8 @@ export class FileController {
   async copy(
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(copyFileSchema)) dto: CopyFileInput,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<FileResponseDto> {
-    if (user.tenantId === null) {
-      throw new ForbiddenException('テナントに所属していません');
-    }
     const ability = this.caslAbilityFactory.createForUser(user);
     const model = await this.fileUsecase.copy(id, dto, user.tenantId, ability);
     const url = await this.fileUsecase.getSignedUrl(model.key);
@@ -124,7 +117,7 @@ export class FileController {
   @CheckPolicy((ability) => ability.can('delete', 'File'))
   async remove(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: UserJwtPayload,
   ): Promise<FileResponseDto> {
     const ability = this.caslAbilityFactory.createForUser(user);
     const file = await this.fileUsecase.remove(id, ability);
